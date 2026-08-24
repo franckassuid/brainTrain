@@ -164,8 +164,7 @@
       </header>
 
       <div class="sudoku-container">
-        <div id="sudoku-board-container" class="sudoku-board-wrapper"></div>
-
+        <!-- Barre d'outils au-dessus de la grille -->
         <div class="sudoku-toolbar">
           <button id="btn-sudoku-notes" class="tool-btn" type="button" title="Mode Crayon">
             <span class="tool-icon" aria-hidden="true">✏️</span>
@@ -189,6 +188,10 @@
           </button>
         </div>
 
+        <!-- Grille Sudoku 9x9 -->
+        <div id="sudoku-board-container" class="sudoku-board-wrapper"></div>
+
+        <!-- Pavé numérique en-dessous sur plusieurs lignes -->
         <div class="sudoku-keypad" role="group" aria-label="Pavé numérique">
           <button class="keypad-btn" data-digit="1" type="button">1<span class="keypad-count">9</span></button>
           <button class="keypad-btn" data-digit="2" type="button">2<span class="keypad-count">9</span></button>
