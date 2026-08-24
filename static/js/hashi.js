@@ -518,10 +518,10 @@ export class HashiGame {
     const islandsLayer = document.createElement('div');
     islandsLayer.className = 'hashi-islands-layer';
 
-    // Dimension d'île dynamique : 66% de la cellule max
+    // Dimension d'île dynamique : 72% de la cellule max
     const maxGridDim = Math.max(num_rows, num_cols);
-    const islandSizePct = (100 / maxGridDim) * 0.68;
-    const fontSizeRem = Math.max(0.75, Math.min(1.2, 11 / maxGridDim));
+    const islandSizePct = (100 / maxGridDim) * 0.72;
+    const fontSizeRem = Math.max(0.85, Math.min(1.35, 12 / maxGridDim));
 
     islands.forEach(([r, c, targetVal], idx) => {
       const island = document.createElement('div');

@@ -57,16 +57,28 @@
         </div>
       </aside>
 
-      <!-- Étape 1 : Choix du jeu (Grille de 7 options) -->
+      <!-- Étape 1 : Choix du jeu (Répartition soignée & équilibrée) -->
       <section class="card" aria-labelledby="heading-game">
         <h2 id="heading-game" class="section-title">
           <span aria-hidden="true">🎮</span> 1. Choisissez votre jeu
         </h2>
-        <div class="game-picker" style="grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));" role="radiogroup" aria-label="Choix du jeu">
-          <button class="game-option active" data-game="all" role="radio" aria-checked="true" type="button">
-            <span class="game-icon" aria-hidden="true">🎲</span>
-            <span class="game-name">Aléatoire</span>
+
+        <!-- Option Aléatoire Principale -->
+        <div class="game-picker-featured" role="radiogroup" aria-label="Défi Aléatoire">
+          <button class="game-option game-option-featured active" data-game="all" role="radio" aria-checked="true" type="button">
+            <div class="game-featured-left">
+              <span class="game-icon" aria-hidden="true">🎲</span>
+              <div class="game-featured-text">
+                <span class="game-name">Défi Aléatoire</span>
+                <span class="game-desc">Tirage équilibré parmi les 6 jeux</span>
+              </div>
+            </div>
+            <span class="game-badge">Tous</span>
           </button>
+        </div>
+
+        <!-- Grille équilibrée 3x2 des 6 jeux -->
+        <div class="game-picker-grid" role="radiogroup" aria-label="Sélection spécifique d'un jeu">
           <button class="game-option" data-game="sudoku" role="radio" aria-checked="false" type="button">
             <span class="game-icon" aria-hidden="true">🔢</span>
             <span class="game-name">Sudoku</span>
@@ -410,7 +422,13 @@
         <div id="cm-board-container" class="cm-board-wrapper"></div>
 
         <div class="cm-bank-card">
-          <div class="cm-bank-title">Nombres Disponibles à Placer :</div>
+          <div class="cm-bank-header">
+            <div class="cm-bank-title">Nombres Disponibles à Placer :</div>
+            <button id="btn-cm-sort" class="cm-sort-btn" type="button" title="Trier les nombres">
+              <span id="cm-sort-icon" aria-hidden="true">⬆️</span>
+              <span id="cm-sort-label">Trier : Croissant</span>
+            </button>
+          </div>
           <div id="cm-bank-container" class="cm-bank-tiles"></div>
         </div>
 

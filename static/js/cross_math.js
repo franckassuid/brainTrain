@@ -28,6 +28,7 @@ export class CrossMathGame {
     this.selectedCell = null; // { r, c }
     this.history = []; // stack of { r, c, prevVal, newVal }
     this.isCompleted = false;
+    this.sortMode = 'asc'; // 'asc' (du plus petit au plus grand) ou 'original'
   }
 
   loadGame(gameData, savedState = null) {
@@ -40,12 +41,38 @@ export class CrossMathGame {
     if (savedState && savedState.id === gameData.id && savedState.grid) {
       this.currentGrid = savedState.grid.map(row => [...row]);
       this.isCompleted = !!savedState.isCompleted;
+      if (savedState.sortMode) this.sortMode = savedState.sortMode;
     } else {
       this.currentGrid = gameData.given_grid.map(row => [...row]);
     }
 
+    this.updateSortButtonUI();
     this.render();
     this.saveState();
+  }
+
+  toggleSortMode() {
+    this.sortMode = this.sortMode === 'asc' ? 'original' : 'asc';
+    this.updateSortButtonUI();
+    this.render();
+    this.saveState();
+    window.dispatchEvent(new CustomEvent('app:toast', {
+      detail: { message: this.sortMode === 'asc' ? '🔢 Nombres triés par ordre croissant' : '🔀 Nombres dans l’ordre du tirage' }
+    }));
+  }
+
+  updateSortButtonUI() {
+    const icon = document.getElementById('cm-sort-icon');
+    const label = document.getElementById('cm-sort-label');
+    if (icon && label) {
+      if (this.sortMode === 'asc') {
+        icon.textContent = '⬆️';
+        label.textContent = 'Trier : Croissant';
+      } else {
+        icon.textContent = '🔀';
+        label.textContent = 'Ordre : Tirage';
+      }
+    }
   }
 
   handleCellTap(r, c) {
@@ -245,7 +272,6 @@ export class CrossMathGame {
     gridEl.className = 'cm-grid';
 
     // Grille de dimensions : (2k + 1) colonnes x (2k + 1) lignes
-    // Colonnes : C0 op C1 op ... Ck-1 = Res
     const totalCols = (2 * k - 1) + 2;
     const totalRows = (2 * k - 1) + 2;
     gridEl.style.gridTemplateColumns = `repeat(${totalCols}, max-content)`;
@@ -334,11 +360,16 @@ export class CrossMathGame {
 
     this.boardContainer.appendChild(gridEl);
 
-    // 3. Rendu de la réserve de Nombres Disponibles
+    // 3. Rendu de la réserve de Nombres Disponibles (avec tri optionnel)
     this.bankContainer.innerHTML = '';
     const tempPlaced = { ...placedCounts };
 
-    available_numbers.forEach((val, idx) => {
+    let listToDisplay = [...available_numbers];
+    if (this.sortMode === 'asc') {
+      listToDisplay.sort((a, b) => a - b);
+    }
+
+    listToDisplay.forEach((val) => {
       const tile = document.createElement('button');
       tile.className = 'cm-bank-tile';
       tile.textContent = val.toString();
@@ -361,6 +392,7 @@ export class CrossMathGame {
       id: this.gameData.id,
       gameData: this.gameData,
       grid: this.currentGrid.map(row => [...row]),
+      sortMode: this.sortMode,
       isCompleted: this.isCompleted,
       updatedAt: Date.now(),
     };

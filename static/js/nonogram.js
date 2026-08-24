@@ -166,10 +166,11 @@ export class NonogramGame {
     this.container.innerHTML = '';
     const { num_rows, num_cols, row_clues, col_clues } = this.gameData;
 
+    const minCellPx = num_cols === 5 ? 36 : (num_cols === 8 ? 29 : 26);
     const table = document.createElement('div');
     table.className = 'nonogram-table';
-    table.style.gridTemplateColumns = `max-content repeat(${num_cols}, minmax(26px, 1fr))`;
-    table.style.gridTemplateRows = `max-content repeat(${num_rows}, minmax(26px, 1fr))`;
+    table.style.gridTemplateColumns = `max-content repeat(${num_cols}, minmax(clamp(${minCellPx}px, 6vw, 42px), 1fr))`;
+    table.style.gridTemplateRows = `max-content repeat(${num_rows}, minmax(clamp(${minCellPx}px, 6vw, 42px), 1fr))`;
 
     // 1. Coin supérieur gauche
     const corner = document.createElement('div');

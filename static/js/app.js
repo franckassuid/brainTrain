@@ -326,6 +326,7 @@ class BrainTrainApp {
     document.getElementById('btn-ceb-solution')?.addEventListener('click', () => this.compteEstBonEngine.showSolutionModal());
 
     // Contrôles Cross Math
+    document.getElementById('btn-cm-sort')?.addEventListener('click', () => this.crossMathEngine.toggleSortMode());
     document.getElementById('btn-cm-undo')?.addEventListener('click', () => this.crossMathEngine.undo());
     document.getElementById('btn-cm-clear')?.addEventListener('click', () => this.crossMathEngine.clear());
     document.getElementById('btn-cm-hint')?.addEventListener('click', () => this.crossMathEngine.giveHint());

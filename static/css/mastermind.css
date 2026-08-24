@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
   gap: 0.875rem;
 }
@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column-reverse; /* Les tentatives récentes en bas, ou chronologique */
   gap: 0.5rem;
-  max-height: 46vh;
+  max-height: 44vh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -55,15 +55,15 @@
 
 /* Pions de couleur */
 .color-peg {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
   box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -153,12 +153,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.625rem;
+  gap: clamp(0.5rem, 2vw, 0.875rem);
 }
 
 .guess-slot {
-  width: 48px;
-  height: 48px;
+  width: clamp(48px, 13vw, 56px);
+  height: clamp(48px, 13vw, 56px);
   border-radius: var(--radius-full);
   border: 2px dashed var(--border-strong);
   background-color: var(--bg-surface);
@@ -200,7 +200,7 @@
 
 .btn-validate-guess {
   flex: 1;
-  min-height: 46px;
+  min-height: 48px;
   background: var(--accent-primary);
   color: #FFFFFF;
   border: none;
@@ -228,8 +228,8 @@
 }
 
 .btn-clear-slot {
-  width: 46px;
-  min-height: 46px;
+  width: 48px;
+  min-height: 48px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
@@ -258,7 +258,7 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 0.75rem;
+  padding: 0.875rem;
   box-shadow: var(--shadow-sm);
 }
 
@@ -266,12 +266,12 @@
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.625rem;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
 }
 
 .color-choice-btn {
-  width: 44px;
-  height: 44px;
+  width: clamp(44px, 12vw, 52px);
+  height: clamp(44px, 12vw, 52px);
   border-radius: var(--radius-full);
   border: 2.5px solid #FFFFFF;
   cursor: pointer;
@@ -280,7 +280,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 800;
   color: #FFFFFF;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
