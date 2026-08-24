@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BrainTrain - Styles Mastermind (Plateau de jeu & Sélecteur de Couleurs)
+   BrainTrain - Styles Mastermind (Plateau compact & Visible en 1 écran)
    ========================================================================== */
 
 .mastermind-container {
@@ -8,55 +8,59 @@
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
-  gap: 0.875rem;
+  flex: 1;
+  min-height: 0;
+  gap: clamp(0.35rem, 1vh, 0.625rem);
 }
 
 /* --------------------------------------------------------------------------
-   Plateau d'Historique des Tentatives
+   Plateau d'Historique des Tentatives (Prend tout l'espace central)
    -------------------------------------------------------------------------- */
 .mastermind-board {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 0.75rem;
+  padding: 0.5rem;
   box-shadow: var(--shadow-sm);
   display: flex;
-  flex-direction: column-reverse; /* Les tentatives récentes en bas, ou chronologique */
-  gap: 0.5rem;
-  max-height: 44vh;
+  flex-direction: column; /* Chronologique du haut vers le bas */
+  gap: 0.35rem;
+  flex: 1;
+  min-height: 120px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-/* Rangée de tentative passée */
+/* Rangée de tentative passée (Compacte & Lisible) */
 .attempt-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.625rem;
+  padding: 0.35rem 0.5rem;
   background-color: var(--bg-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   border: 1px solid transparent;
   transition: all var(--transition-fast);
+  min-height: 36px;
 }
 
 .attempt-number {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   width: 24px;
 }
 
 .attempt-pegs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
   align-items: center;
 }
 
-/* Pions de couleur */
+/* Pions de couleur de l'historique */
 .color-peg {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-full);
   box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4), 0 2px 4px rgba(0, 0, 0, 0.12);
   display: flex;
@@ -72,9 +76,9 @@
 .verdict-box {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
   background-color: var(--bg-surface);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.45rem;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border-subtle);
 }
@@ -83,8 +87,8 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 800;
 }
 
 .verdict-item.exact {
@@ -96,8 +100,8 @@
 }
 
 .verdict-dot {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border-radius: var(--radius-full);
   display: inline-block;
 }
@@ -118,11 +122,12 @@
   background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%);
   border: 2px solid var(--accent-primary);
   border-radius: var(--radius-md);
-  padding: 0.875rem;
+  padding: 0.5rem 0.75rem;
   box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .active-guess-header {
@@ -132,7 +137,7 @@
 }
 
 .active-guess-title {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--accent-primary);
   display: flex;
@@ -145,7 +150,7 @@
   font-weight: 700;
   color: var(--text-secondary);
   background-color: var(--bg-subtle);
-  padding: 0.2rem 0.5rem;
+  padding: 0.15rem 0.45rem;
   border-radius: var(--radius-full);
 }
 
@@ -153,12 +158,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: clamp(0.5rem, 2vw, 0.875rem);
+  gap: clamp(0.375rem, 1.5vw, 0.75rem);
 }
 
 .guess-slot {
-  width: clamp(48px, 13vw, 56px);
-  height: clamp(48px, 13vw, 56px);
+  width: clamp(42px, 11vw, 50px);
+  height: clamp(42px, 11vw, 50px);
   border-radius: var(--radius-full);
   border: 2px dashed var(--border-strong);
   background-color: var(--bg-surface);
@@ -178,7 +183,7 @@
   border-style: solid;
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px var(--accent-primary-subtle);
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .guess-slot.filled {
@@ -200,7 +205,7 @@
 
 .btn-validate-guess {
   flex: 1;
-  min-height: 48px;
+  min-height: 44px;
   background: var(--accent-primary);
   color: #FFFFFF;
   border: none;
@@ -228,8 +233,8 @@
 }
 
 .btn-clear-slot {
-  width: 48px;
-  min-height: 48px;
+  width: 44px;
+  min-height: 44px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
@@ -258,20 +263,21 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 0.875rem;
+  padding: 0.5rem 0.625rem;
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .color-picker-palette {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: clamp(0.5rem, 2vw, 0.75rem);
+  gap: clamp(0.375rem, 1.5vw, 0.625rem);
 }
 
 .color-choice-btn {
-  width: clamp(44px, 12vw, 52px);
-  height: clamp(44px, 12vw, 52px);
+  width: clamp(40px, 10vw, 48px);
+  height: clamp(40px, 10vw, 48px);
   border-radius: var(--radius-full);
   border: 2.5px solid #FFFFFF;
   cursor: pointer;

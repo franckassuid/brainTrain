@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BrainTrain - Styles Le Compte est bon
+   BrainTrain - Styles Le Compte est bon (Calé en 1 écran)
    ========================================================================== */
 
 .ceb-container {
@@ -9,7 +9,10 @@
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
-  gap: 0.875rem;
+  flex: 1;
+  min-height: 0;
+  gap: clamp(0.35rem, 1vh, 0.625rem);
+  justify-content: space-between;
 }
 
 /* --------------------------------------------------------------------------
@@ -20,15 +23,16 @@
   background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%);
   color: #FFFFFF;
   border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
+  padding: 0.5rem 1rem;
   text-align: center;
   box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.15rem;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .ceb-target-card::before {
@@ -43,7 +47,7 @@
 }
 
 .ceb-target-label {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -51,7 +55,7 @@
 }
 
 .ceb-target-value {
-  font-size: clamp(2.75rem, 8vw, 3.5rem);
+  font-size: clamp(2.25rem, 6.5vw, 3rem);
   font-weight: 800;
   font-family: var(--font-mono);
   letter-spacing: -0.02em;
@@ -68,25 +72,26 @@
   background: var(--bg-surface);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 0.875rem;
+  padding: 0.4rem 0.625rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   box-shadow: var(--shadow-sm);
-  min-height: 74px;
+  min-height: 56px;
+  flex-shrink: 0;
 }
 
 .ceb-slot {
-  min-width: 68px;
-  height: 56px;
+  min-width: 60px;
+  height: 48px;
   border-radius: var(--radius-sm);
   border: 2px dashed var(--border-strong);
   background-color: var(--bg-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-primary);
   padding: 0 0.5rem;
@@ -94,11 +99,11 @@
 }
 
 .ceb-slot.op-slot {
-  min-width: 52px;
-  width: 52px;
+  min-width: 44px;
+  width: 44px;
   border-radius: var(--radius-full);
   color: var(--accent-primary);
-  font-size: 1.75rem;
+  font-size: 1.5rem;
 }
 
 .ceb-slot.filled {
@@ -116,32 +121,38 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 0.875rem;
+  padding: 0.5rem 0.625rem;
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.ceb-section-box .section-title {
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
 }
 
 .ceb-numbers-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .ceb-num-tile {
-  min-width: 64px;
-  height: 60px;
-  padding: 0 0.875rem;
+  min-width: 58px;
+  height: 52px;
+  padding: 0 0.75rem;
   border-radius: var(--radius-sm);
   background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%);
   border: 2.5px solid #1C1917;
   color: #1C1917;
-  font-size: 1.65rem;
+  font-size: 1.45rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
   transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
   user-select: none;
   touch-action: manipulation;
@@ -172,23 +183,24 @@
 }
 
 /* --------------------------------------------------------------------------
-   Barre des Opérateurs (+, −, ×, ÷) - Gros Boutons
+   Barre des Opérateurs (+, −, ×, ÷)
    -------------------------------------------------------------------------- */
 .ceb-operators-bar {
   display: flex;
   justify-content: center;
-  gap: 0.875rem;
+  gap: 0.625rem;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .ceb-op-btn {
-  width: 58px;
-  height: 58px;
+  width: 50px;
+  height: 50px;
   border-radius: var(--radius-full);
   background: var(--bg-surface);
-  border: 2.5px solid var(--border-strong);
+  border: 2px solid var(--border-strong);
   color: var(--text-primary);
-  font-size: 1.85rem;
+  font-size: 1.625rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -222,8 +234,8 @@
 .ceb-history-list {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  max-height: 160px;
+  gap: 0.25rem;
+  max-height: 80px;
   overflow-y: auto;
 }
 
@@ -233,13 +245,13 @@
   justify-content: space-between;
   background-color: var(--bg-subtle);
   border-radius: var(--radius-xs);
-  padding: 0.375rem 0.625rem;
-  font-size: 0.9375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .ceb-step-num {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--text-muted);
 }
