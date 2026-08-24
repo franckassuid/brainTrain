@@ -9,10 +9,8 @@
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
-  flex: 1;
-  min-height: 0;
-  gap: clamp(0.35rem, 1vh, 0.625rem);
-  justify-content: space-between;
+  gap: 0.625rem;
+  justify-content: flex-start;
 }
 
 /* --------------------------------------------------------------------------

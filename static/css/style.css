@@ -149,16 +149,12 @@ body {
   display: flex;
 }
 
-/* En cours de jeu : calage strict 1 écran sans scroll parasite */
+/* En cours de jeu : groupement naturel et sans scroll parasite */
 .view:not(#view-home) {
-  overflow-y: hidden;
+  overflow-y: auto;
   justify-content: flex-start;
-}
-
-@media (max-height: 560px) {
-  .view:not(#view-home) {
-    overflow-y: auto;
-  }
+  align-items: center;
+  gap: 0.5rem;
 }
 
 @keyframes fadeIn {
