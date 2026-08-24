@@ -1,5 +1,5 @@
 /**
- * BrainTrain - Module Client API REST (Support 5 jeux)
+ * BrainTrain - Module Client API REST (Support 6 jeux)
  */
 
 const API_BASE = '/api';
@@ -129,5 +129,25 @@ export async function verifyCompteEstBon(id, stepsList) {
 export async function getCompteEstBonSolution(id) {
   const res = await fetch(`${API_BASE}/games/compte_est_bon/${id}/solution`);
   if (!res.ok) throw new Error('Impossible de récupérer la solution du Compte est bon');
+  return res.json();
+}
+
+// --- Cross Math ---
+export async function verifyCrossMath(id, proposedGrid) {
+  const res = await fetch(`${API_BASE}/games/cross_math/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, grid: proposedGrid }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Erreur de vérification Cross Math`);
+  }
+  return res.json();
+}
+
+export async function getCrossMathSolution(id) {
+  const res = await fetch(`${API_BASE}/games/cross_math/${id}/solution`);
+  if (!res.ok) throw new Error('Impossible de récupérer la solution Cross Math');
   return res.json();
 }

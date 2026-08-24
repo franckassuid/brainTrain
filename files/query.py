@@ -1,6 +1,7 @@
 """
 Fonctions permettant de demander un jeu à la base selon :
-- son type ('sudoku', 'mastermind', 'nonogram', 'hashi' ou 'compte_est_bon')
+- son type ('sudoku', 'mastermind', 'nonogram', 'hashi', 'compte_est_bon'
+  ou 'cross_math')
 - sa difficulté ('facile', 'moyen', 'difficile')
 - le temps disponible (en minutes)
 
@@ -27,7 +28,7 @@ import sqlite3
 
 from db import get_connection
 
-VALID_TYPES = {"sudoku", "mastermind", "nonogram", "hashi", "compte_est_bon"}
+VALID_TYPES = {"sudoku", "mastermind", "nonogram", "hashi", "compte_est_bon", "cross_math"}
 VALID_DIFFICULTIES = {"facile", "moyen", "difficile"}
 
 
@@ -92,6 +93,24 @@ def _fetch_compte_est_bon(conn, difficulty=None, max_duration=None):
     return games
 
 
+def _fetch_cross_math(conn, difficulty=None, max_duration=None):
+    query, params = _apply_filters("SELECT * FROM cross_math_puzzles WHERE 1=1", [], difficulty, max_duration)
+    rows = conn.execute(query, params).fetchall()
+    games = []
+    for row in rows:
+        game = dict(row, type="cross_math")
+        game["given_grid"] = json.loads(game["given_grid"])
+        game["solution_grid"] = json.loads(game["solution_grid"])
+        game["row_operators"] = json.loads(game["row_operators"])
+        game["col_operators"] = json.loads(game["col_operators"])
+        game["row_results"] = json.loads(game["row_results"])
+        game["col_results"] = json.loads(game["col_results"])
+        game["available_numbers"] = json.loads(game["available_numbers"])
+        game["solution_unique"] = bool(game["solution_unique"])
+        games.append(game)
+    return games
+
+
 # Registre centralisé : un seul endroit à mettre à jour pour ajouter un type.
 TYPE_FETCHERS = {
     "sudoku": _fetch_sudoku,
@@ -99,6 +118,7 @@ TYPE_FETCHERS = {
     "nonogram": _fetch_nonogram,
     "hashi": _fetch_hashi,
     "compte_est_bon": _fetch_compte_est_bon,
+    "cross_math": _fetch_cross_math,
 }
 
 
@@ -112,7 +132,7 @@ def get_games(
     Renvoie la liste des jeux correspondant aux critères donnés.
 
     game_type    : 'sudoku', 'mastermind', 'nonogram', 'hashi',
-                   'compte_est_bon', ou None pour tous les types.
+                   'compte_est_bon', 'cross_math', ou None pour tous les types.
     difficulty   : 'facile', 'moyen', 'difficile', ou None pour toutes.
     max_duration : durée max en minutes disponible pour jouer, ou None.
     conn         : connexion SQLite existante (sinon une nouvelle est ouverte).
@@ -203,6 +223,9 @@ if __name__ == "__main__":
 
     print("\nUn niveau du Compte est bon difficile :")
     print(get_random_game(game_type="compte_est_bon", difficulty="difficile"))
+
+    print("\nUn niveau Cross Math moyen :")
+    print(get_random_game(game_type="cross_math", difficulty="moyen"))
 
     print("\nRépartition observée sur 2000 tirages sans type précisé :")
     from collections import Counter

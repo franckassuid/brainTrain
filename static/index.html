@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="BrainTrain - Application mobile-first d'entraînement mental quotidien avec Sudoku, Mastermind, Nonogramme, Hashi et Le Compte est bon.">
+  <meta name="description" content="BrainTrain - Application mobile-first d'entraînement mental quotidien avec Sudoku, Mastermind, Nonogramme, Hashi, Le Compte est bon et Cross Math.">
   <meta name="theme-color" content="#FAF8F5">
   <title>BrainTrain — Entraînement Mental</title>
 
@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/nonogram.css">
   <link rel="stylesheet" href="css/hashi.css">
   <link rel="stylesheet" href="css/compte_est_bon.css">
+  <link rel="stylesheet" href="css/cross_math.css">
 </head>
 <body>
   <div id="app">
@@ -56,12 +57,12 @@
         </div>
       </aside>
 
-      <!-- Étape 1 : Choix du jeu (Grille de 6 options) -->
+      <!-- Étape 1 : Choix du jeu (Grille de 7 options) -->
       <section class="card" aria-labelledby="heading-game">
         <h2 id="heading-game" class="section-title">
           <span aria-hidden="true">🎮</span> 1. Choisissez votre jeu
         </h2>
-        <div class="game-picker" style="grid-template-columns: repeat(3, 1fr);" role="radiogroup" aria-label="Choix du jeu">
+        <div class="game-picker" style="grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));" role="radiogroup" aria-label="Choix du jeu">
           <button class="game-option active" data-game="all" role="radio" aria-checked="true" type="button">
             <span class="game-icon" aria-hidden="true">🎲</span>
             <span class="game-name">Aléatoire</span>
@@ -85,6 +86,10 @@
           <button class="game-option" data-game="compte_est_bon" role="radio" aria-checked="false" type="button">
             <span class="game-icon" aria-hidden="true">🧮</span>
             <span class="game-name">Compte Bon</span>
+          </button>
+          <button class="game-option" data-game="cross_math" role="radio" aria-checked="false" type="button">
+            <span class="game-icon" aria-hidden="true">➕</span>
+            <span class="game-name">Cross Math</span>
           </button>
         </div>
       </section>
@@ -120,7 +125,7 @@
         <button id="btn-launch-game" class="btn-primary" type="button">
           <span aria-hidden="true">🚀</span> Lancer une partie
         </button>
-        <div id="match-count" class="match-counter" aria-live="polite">450 parties disponibles</div>
+        <div id="match-count" class="match-counter" aria-live="polite">500 parties disponibles</div>
       </div>
 
     </main>
@@ -335,22 +340,18 @@
       </header>
 
       <div class="ceb-container">
-        <!-- Bannière Cible -->
         <div class="ceb-target-card">
           <div class="ceb-target-label">🎯 Nombre Cible à Atteindre</div>
           <div id="ceb-target-display" class="ceb-target-value">---</div>
         </div>
 
-        <!-- Zone de Calcul Actif -->
         <div id="ceb-builder-slots" class="ceb-builder-card"></div>
 
-        <!-- Plaque des Nombres Disponibles -->
         <div class="ceb-section-box">
           <div class="section-title">Nombres Disponibles :</div>
           <div id="ceb-numbers-pool" class="ceb-numbers-grid"></div>
         </div>
 
-        <!-- Barre des Opérateurs -->
         <div id="ceb-operators-bar" class="ceb-operators-bar">
           <button class="ceb-op-btn" data-op="+" type="button">+</button>
           <button class="ceb-op-btn" data-op="-" type="button">−</button>
@@ -358,7 +359,6 @@
           <button class="ceb-op-btn" data-op="/" type="button">÷</button>
         </div>
 
-        <!-- Barre d'outils -->
         <div class="sudoku-toolbar">
           <button id="btn-ceb-undo" class="tool-btn" type="button" title="Annuler le dernier calcul">
             <span class="tool-icon" aria-hidden="true">↩️</span>
@@ -378,10 +378,59 @@
           </button>
         </div>
 
-        <!-- Historique des étapes -->
         <div class="ceb-section-box">
           <div class="section-title">Calculs Réalisés :</div>
           <div id="ceb-history-list" class="ceb-history-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VUE 7 : JEU CROSS MATH
+         ==================================================================== -->
+    <section id="view-cross-math" class="view" aria-label="Partie de Cross Math">
+      <header class="game-header">
+        <div class="game-header-left">
+          <button id="btn-cm-back" class="btn-icon" title="Menu / Pause" type="button">←</button>
+          <div class="game-title-group">
+            <h2 class="game-title">Cross Math</h2>
+            <div style="display: flex; gap: 0.375rem; align-items: center;">
+              <span id="cm-difficulty-badge" class="badge-difficulty badge-facile">facile</span>
+              <span id="cm-info-text" style="font-size: 0.75rem; color: var(--text-muted);">Grille 3×3</span>
+            </div>
+          </div>
+        </div>
+        <div class="timer-box" aria-label="Chronomètre">
+          <span aria-hidden="true">⏱️</span>
+          <span id="cm-timer-text">00:00</span>
+        </div>
+      </header>
+
+      <div class="cm-container">
+        <div id="cm-board-container" class="cm-board-wrapper"></div>
+
+        <div class="cm-bank-card">
+          <div class="cm-bank-title">Nombres Disponibles à Placer :</div>
+          <div id="cm-bank-container" class="cm-bank-tiles"></div>
+        </div>
+
+        <div class="sudoku-toolbar">
+          <button id="btn-cm-undo" class="tool-btn" type="button" title="Annuler">
+            <span class="tool-icon" aria-hidden="true">↩️</span>
+            <span>Annuler</span>
+          </button>
+          <button id="btn-cm-clear" class="tool-btn" type="button" title="Réinitialiser la grille">
+            <span class="tool-icon" aria-hidden="true">⌫</span>
+            <span>Effacer</span>
+          </button>
+          <button id="btn-cm-hint" class="tool-btn" type="button" title="Indice">
+            <span class="tool-icon" aria-hidden="true">💡</span>
+            <span>Indice</span>
+          </button>
+          <button id="btn-cm-check" class="tool-btn" type="button" title="Vérifier">
+            <span class="tool-icon" aria-hidden="true">✔️</span>
+            <span>Vérifier</span>
+          </button>
         </div>
       </div>
     </section>

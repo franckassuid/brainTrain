@@ -121,6 +121,51 @@ CREATE TABLE IF NOT EXISTS compte_est_bon_puzzles (
 );
 
 -- -----------------------------------------------------------
+-- Table CROSS MATH
+-- -----------------------------------------------------------
+-- Grille k x k (k = grid_size) traversée par k équations horizontales et
+-- k équations verticales. RÈGLE DE CALCUL (voir cross_math_generator.py,
+-- fonction evaluate_chain, seule source de vérité, utilisée pour la
+-- génération, le solveur ET la validation) : chaque ligne/colonne se
+-- calcule STRICTEMENT de gauche à droite (lignes) ou de haut en bas
+-- (colonnes), SANS PRIORITÉ OPÉRATOIRE IMPLICITE entre + - × ÷. Toute
+-- division doit être exacte et produire un résultat strictement positif ;
+-- aucun résultat intermédiaire ne peut être négatif.
+--
+-- given_grid : JSON, matrice k x k ; un nombre pour une case pré-remplie,
+--   null pour une case à compléter par le joueur.
+-- solution_grid : JSON, matrice k x k complète (référence uniquement —
+--   la validation d'une proposition du joueur se fait via
+--   validate_player_grid(), à partir des SEULES autres colonnes
+--   ci-dessous, jamais par simple comparaison à solution_grid).
+-- row_operators / col_operators : JSON, k listes de (k-1) opérateurs
+--   parmi "+","-","*","/" (les symboles d'affichage × et ÷ correspondent
+--   à "*" et "/") — ce sont les "opérateurs visibles" du niveau.
+-- row_results / col_results : JSON, liste de k entiers (résultat de
+--   chaque ligne / colonne selon la règle de calcul ci-dessus).
+-- available_numbers : JSON, liste (mélangée) du multi-ensemble des
+--   nombres à placer dans les cases vides — exactement les valeurs de
+--   solution_grid aux positions où given_grid vaut null.
+-- solution_unique : 1 si l'unicité a été confirmée par le solveur (voir
+--   cross_math_generator.py — toujours le cas pour les 50 niveaux de
+--   cette version, la génération réessaie jusqu'à l'obtenir).
+CREATE TABLE IF NOT EXISTS cross_math_puzzles (
+    id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+    grid_size                   INTEGER NOT NULL,
+    given_grid                  TEXT    NOT NULL,   -- JSON
+    solution_grid                TEXT    NOT NULL,   -- JSON
+    row_operators                TEXT    NOT NULL,   -- JSON
+    col_operators                TEXT    NOT NULL,   -- JSON
+    row_results                  TEXT    NOT NULL,   -- JSON
+    col_results                  TEXT    NOT NULL,   -- JSON
+    available_numbers            TEXT    NOT NULL,   -- JSON
+    difficulty                  TEXT    NOT NULL CHECK (difficulty IN ('facile', 'moyen', 'difficile')),
+    estimated_duration_minutes  INTEGER NOT NULL,
+    solution_unique             INTEGER NOT NULL DEFAULT 1 CHECK (solution_unique IN (0, 1)),
+    created_at                  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- -----------------------------------------------------------
 -- Index utiles pour les requêtes par type / difficulté / durée
 -- -----------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_sudoku_difficulty   ON sudoku_puzzles (difficulty);
@@ -137,3 +182,6 @@ CREATE INDEX IF NOT EXISTS idx_hashi_duration    ON hashi_puzzles (estimated_dur
 
 CREATE INDEX IF NOT EXISTS idx_compte_est_bon_difficulty ON compte_est_bon_puzzles (difficulty);
 CREATE INDEX IF NOT EXISTS idx_compte_est_bon_duration    ON compte_est_bon_puzzles (estimated_duration_minutes);
+
+CREATE INDEX IF NOT EXISTS idx_cross_math_difficulty ON cross_math_puzzles (difficulty);
+CREATE INDEX IF NOT EXISTS idx_cross_math_duration    ON cross_math_puzzles (estimated_duration_minutes);

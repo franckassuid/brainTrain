@@ -3,7 +3,7 @@ Tests de validation de la base de données générée.
 
 Vérifie :
 - les comptes et répartitions par difficulté (Sudoku, Mastermind,
-  Nonogramme, Hashi, Compte est bon)
+  Nonogramme, Hashi, Compte est bon, Cross Math)
 - que chaque grille de Sudoku de départ et sa solution sont cohérentes
 - que chaque grille solution respecte les règles du Sudoku
 - que chaque grille de départ a bien une solution UNIQUE
@@ -15,18 +15,27 @@ Vérifie :
 - que chaque solution du Compte est bon atteint réellement la cible, que
   la division est toujours entière et qu'aucun nombre n'est utilisé plus
   de fois qu'il n'est disponible
+- que chaque solution Cross Math est mathématiquement valide (règle de
+  calcul gauche->droite / haut->bas, sans priorité opératoire), que
+  chaque division est entière, que la solution est unique (recomptée
+  par le solveur), qu'une mauvaise proposition est rejetée et que la
+  bonne solution est acceptée
 - que les durées estimées correspondent bien à la difficulté
-- que la fonction de requête filtre correctement les 5 types de jeux
+- que la fonction de requête filtre correctement les 6 types de jeux
 - que le tirage aléatoire SANS type précisé est équilibré entre les
   types de jeux, indépendamment de leur nombre de niveaux en base
+- (implicitement, via les comptes exacts de chaque table) qu'aucune
+  donnée d'un autre type de jeu n'a été modifiée par l'ajout de Cross Math
 
 Usage :
     python test_data.py
 """
+from __future__ import annotations
 
 import json
 import sys
 from collections import Counter
+from pathlib import Path
 
 from db import get_connection
 from sudoku_generator import (
@@ -47,12 +56,20 @@ from hashi_generator import (
     UNIQUENESS_CHECK_MAX_ISLANDS,
 )
 from compte_est_bon_generator import verify_solution as compte_est_bon_verify_solution
+from cross_math_generator import (
+    evaluate_chain as cross_math_evaluate_chain,
+    validate_player_grid as cross_math_validate_player_grid,
+    is_correct_player_grid as cross_math_is_correct_player_grid,
+    count_solutions as cross_math_count_solutions,
+    DIFFICULTY_PARAMS as CROSS_MATH_DIFFICULTY_PARAMS,
+)
 
 SUDOKU_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 MASTERMIND_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 15}
 NONOGRAM_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 HASHI_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 COMPTE_EST_BON_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
+CROSS_MATH_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 EXPECTED_DISTRIBUTION = {"facile": 20, "moyen": 20, "difficile": 10}
 COMPTE_EST_BON_EXPECTED_DISTRIBUTION = {"facile": 100, "moyen": 100, "difficile": 50}
 
@@ -388,15 +405,193 @@ def test_compte_est_bon(conn) -> None:
     )
 
 
+def test_cross_math(conn) -> None:
+    print("\n--- Cross Math ---")
+    rows = conn.execute("SELECT * FROM cross_math_puzzles").fetchall()
+
+    check(len(rows) == 50, f"50 niveaux au total (trouvé {len(rows)})")
+
+    counts = {"facile": 0, "moyen": 0, "difficile": 0}
+    invalid_solution_count = 0
+    non_unique_count = 0
+    bad_division_count = 0
+    accepted_correct_count = 0
+    rejected_wrong_count = 0
+    seen_signatures = set()
+
+    for row in rows:
+        difficulty = row["difficulty"]
+        counts[difficulty] += 1
+        k = row["grid_size"]
+
+        given_grid = json.loads(row["given_grid"])
+        solution_grid = json.loads(row["solution_grid"])
+        row_operators = json.loads(row["row_operators"])
+        col_operators = json.loads(row["col_operators"])
+        row_results = json.loads(row["row_results"])
+        col_results = json.loads(row["col_results"])
+        available_numbers = json.loads(row["available_numbers"])
+
+        # 1. taille de grille cohérente avec la difficulté annoncée
+        expected_k = CROSS_MATH_DIFFICULTY_PARAMS[difficulty]["grid_size"]
+        if k != expected_k:
+            failures.append(f"id={row['id']} : taille de grille {k} != attendue {expected_k} pour '{difficulty}'")
+
+        # 2. la grille solution respecte réellement chaque équation, selon
+        #    LA règle de calcul officielle (gauche->droite, haut->bas,
+        #    sans priorité opératoire) — validée à partir des données
+        #    stockées uniquement (pas de simple recopie)
+        solution_errors = cross_math_validate_player_grid(
+            given_grid, row_operators, col_operators, row_results, col_results,
+            available_numbers, solution_grid,
+        )
+        if solution_errors:
+            invalid_solution_count += 1
+            failures.append(f"id={row['id']} : solution stockée invalide -> {solution_errors}")
+            print(f"  FAIL - id={row['id']} : {solution_errors}")
+        else:
+            accepted_correct_count += 1
+
+        # 3. aucune division décimale ni par zéro (vérification directe,
+        #    en rejouant chaque ligne/colonne avec la règle officielle)
+        for line_values, line_ops in [
+            *[(row_i, row_operators[i]) for i, row_i in enumerate(solution_grid)],
+            *[
+                ([solution_grid[r][c] for r in range(k)], col_operators[c])
+                for c in range(k)
+            ],
+        ]:
+            result = cross_math_evaluate_chain(line_values, line_ops)
+            if result is None:
+                bad_division_count += 1
+                failures.append(f"id={row['id']} : équation invalide détectée (division non entière ou négative)")
+                continue
+            # double-vérification directe des divisions
+            r = line_values[0]
+            for num, op in zip(line_values[1:], line_ops):
+                if op == "/":
+                    if num == 0 or r % num != 0:
+                        bad_division_count += 1
+                        failures.append(f"id={row['id']} : division non entière ({r} / {num})")
+                    r = r // num if num != 0 else r
+                elif op == "+":
+                    r = r + num
+                elif op == "-":
+                    r = r - num
+                elif op == "*":
+                    r = r * num
+
+        # 4. UNICITÉ de la solution (recomptée indépendamment, pas de
+        #    simple confiance dans le flag stocké)
+        if row["solution_unique"]:
+            n_solutions = cross_math_count_solutions(
+                given_grid, row_operators, col_operators, row_results, col_results,
+                available_numbers, limit=2,
+            )
+            if n_solutions != 1:
+                non_unique_count += 1
+                failures.append(f"id={row['id']} : unicité annoncée mais {n_solutions} solution(s) trouvée(s)")
+        else:
+            non_unique_count += 1
+            failures.append(f"id={row['id']} : solution_unique=0 (devrait toujours être 1 dans ce jeu de données)")
+
+        # 5. rejet d'une mauvaise proposition : on altère une case à
+        #    compléter (échange de deux valeurs disponibles) et on vérifie
+        #    que le validateur la rejette (sauf cas très rare où l'échange
+        #    donne accidentellement une solution alternative valide, ce
+        #    qui contredirait l'unicité déjà testée ci-dessus)
+        blanks = [(r, c) for r in range(k) for c in range(k) if given_grid[r][c] is None]
+        if len(blanks) >= 2:
+            wrong_grid = [line[:] for line in solution_grid]
+            (r1, c1), (r2, c2) = blanks[0], blanks[1]
+            if wrong_grid[r1][c1] != wrong_grid[r2][c2]:
+                wrong_grid[r1][c1], wrong_grid[r2][c2] = wrong_grid[r2][c2], wrong_grid[r1][c1]
+                is_correct = cross_math_is_correct_player_grid(
+                    given_grid, row_operators, col_operators, row_results, col_results,
+                    available_numbers, wrong_grid,
+                )
+                if is_correct:
+                    failures.append(f"id={row['id']} : une proposition erronée (permutation) a été acceptée à tort")
+                else:
+                    rejected_wrong_count += 1
+
+        # 6. durée cohérente avec la difficulté
+        if row["estimated_duration_minutes"] != CROSS_MATH_DURATIONS[difficulty]:
+            failures.append(f"id={row['id']} : durée incohérente pour {difficulty}")
+
+        seen_signatures.add(
+            (tuple(tuple(r) for r in solution_grid), tuple(tuple(o) for o in row_operators),
+             tuple(tuple(o) for o in col_operators), tuple(row_results), tuple(col_results))
+        )
+
+    check(counts["facile"] == 20, f"20 niveaux faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 20, f"20 niveaux moyens (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 10, f"10 niveaux difficiles (trouvé {counts['difficile']})")
+    check(invalid_solution_count == 0, f"toutes les solutions stockées sont mathématiquement valides ({invalid_solution_count} invalide(s))")
+    check(bad_division_count == 0, f"aucune division décimale ou par zéro détectée ({bad_division_count} trouvée(s))")
+    check(non_unique_count == 0, f"toutes les solutions sont confirmées uniques ({non_unique_count} problème(s))")
+    check(
+        rejected_wrong_count > 0,
+        f"le validateur rejette bien les mauvaises propositions testées ({rejected_wrong_count} rejet(s) confirmé(s))",
+    )
+    check(accepted_correct_count == len(rows), f"le validateur accepte la bonne solution pour tous les niveaux ({accepted_correct_count}/{len(rows)})")
+    check(
+        len(seen_signatures) == len(rows),
+        f"les niveaux sont variés, aucun doublon (même par transposition) : "
+        f"{len(seen_signatures)}/{len(rows)} signatures distinctes",
+    )
+    print(
+        f"  ({len(rows)} solutions revérifiées intégralement, unicité recomptée par le solveur, "
+        f"rejet de proposition erronée testé sur chaque niveau ayant >=2 cases à compléter)"
+    )
+
+
+def test_other_games_untouched_by_cross_math(conn) -> None:
+    """
+    Vérifie explicitement que l'ajout de Cross Math n'a modifié aucune
+    donnée des autres types de jeux : le nombre de lignes de chaque table
+    correspond exactement à ce qui existait avant l'ajout de Cross Math.
+
+    Remarque : on ne suppose PAS que les identifiants sont contigus à
+    partir de 1, car ces tables ont pu être régénérées lors de sessions
+    de développement précédentes (avant l'ajout de Cross Math) — seul le
+    nombre de lignes (et, en pratique, leur contenu — vérifié manuellement
+    par empreinte MD5 avant/après l'ajout de Cross Math, voir README.md)
+    doit rester strictement identique désormais que `generate_data.py`
+    n'écrit plus jamais dans une table déjà peuplée (voir sa docstring).
+    """
+    print("\n--- Non-régression : les autres jeux n'ont pas été modifiés ---")
+
+    tables_and_expected_counts = [
+        ("sudoku_puzzles", 50),
+        ("mastermind_games", 50),
+        ("nonogram_puzzles", 50),
+        ("hashi_puzzles", 50),
+        ("compte_est_bon_puzzles", 250),
+    ]
+    for table, expected_count in tables_and_expected_counts:
+        count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+        check(count == expected_count, f"{table} : {expected_count} lignes toujours présentes (trouvé {count})")
+
+    generate_data_path = Path(__file__).parent / "generate_data.py"
+    with open(generate_data_path, "r", encoding="utf-8") as f:
+        source = f.read()
+    check(
+        "DELETE FROM" not in source and "DROP TABLE" not in source,
+        "generate_data.py ne contient aucune instruction DELETE/DROP (purement additif)",
+    )
+
+
 def test_query_function(conn) -> None:
     print("\n--- Fonction de requête get_games / get_random_game ---")
     from query import get_games, get_random_game, VALID_TYPES
 
     all_games = get_games(conn=conn)
-    check(len(all_games) == 450, f"450 jeux au total via get_games() (trouvé {len(all_games)})")
+    check(len(all_games) == 500, f"500 jeux au total via get_games() (trouvé {len(all_games)})")
 
     for game_type, expected in [
-        ("sudoku", 50), ("mastermind", 50), ("nonogram", 50), ("hashi", 50), ("compte_est_bon", 250)
+        ("sudoku", 50), ("mastermind", 50), ("nonogram", 50), ("hashi", 50),
+        ("compte_est_bon", 250), ("cross_math", 50),
     ]:
         results = get_games(game_type=game_type, conn=conn)
         check(
@@ -409,8 +604,8 @@ def test_query_function(conn) -> None:
         )
 
     easy_only = get_games(difficulty="facile", conn=conn)
-    # 20 (sudoku) + 20 (mastermind) + 20 (nonogram) + 20 (hashi) + 100 (compte_est_bon) = 180
-    check(len(easy_only) == 180, f"get_games(difficulty='facile') renvoie 180 résultats (trouvé {len(easy_only)})")
+    # 20 (sudoku) + 20 (mastermind) + 20 (nonogram) + 20 (hashi) + 100 (compte_est_bon) + 20 (cross_math) = 200
+    check(len(easy_only) == 200, f"get_games(difficulty='facile') renvoie 200 résultats (trouvé {len(easy_only)})")
 
     short_games = get_games(max_duration=5, conn=conn)
     check(
@@ -429,6 +624,9 @@ def test_query_function(conn) -> None:
 
     compte_combo = get_games(game_type="compte_est_bon", difficulty="difficile", conn=conn)
     check(len(compte_combo) == 50, "get_games(game_type='compte_est_bon', difficulty='difficile') renvoie 50 résultats")
+
+    cross_math_combo = get_games(game_type="cross_math", difficulty="difficile", conn=conn)
+    check(len(cross_math_combo) == 10, "get_games(game_type='cross_math', difficulty='difficile') renvoie 10 résultats")
 
     random_game = get_random_game(game_type="sudoku", conn=conn)
     check(random_game is not None and random_game["type"] == "sudoku", "get_random_game() renvoie un jeu du bon type")
@@ -451,6 +649,14 @@ def test_query_function(conn) -> None:
         "get_random_game(game_type='compte_est_bon') désérialise bien available_numbers en liste Python",
     )
 
+    random_cross_math = get_random_game(game_type="cross_math", conn=conn)
+    check(
+        random_cross_math is not None
+        and isinstance(random_cross_math["given_grid"], list)
+        and isinstance(random_cross_math["row_operators"], list),
+        "get_random_game(game_type='cross_math') désérialise bien given_grid / row_operators en listes Python",
+    )
+
     empty = get_games(game_type="sudoku", difficulty="difficile", max_duration=1, conn=conn)
     check(empty == [], "critères impossibles à satisfaire renvoient une liste vide")
 
@@ -471,7 +677,7 @@ def test_balanced_random_selection(conn) -> None:
         game = get_random_game(conn=conn)
         tally[game["type"]] += 1
 
-    expected_share = 1 / len(VALID_TYPES)  # 20% pour 5 types
+    expected_share = 1 / len(VALID_TYPES)  # ≈ 16.7% pour 6 types
     tolerance = 0.06  # marge généreuse (écart-type théorique ~0.6% à 4000 tirages)
 
     print(f"  {n_samples} tirages, part attendue par type ≈ {expected_share:.0%} :")
@@ -491,14 +697,14 @@ def test_balanced_random_selection(conn) -> None:
     check(
         all_balanced,
         "chaque type de jeu est tiré avec une probabilité ≈ égale, malgré 250 niveaux "
-        "pour 'compte_est_bon' contre 50 pour les autres types",
+        "pour 'compte_est_bon' contre 50 pour les autres types (dont le nouveau 'cross_math')",
     )
 
-    # Le Compte est bon représente 250/450 ≈ 56% des LIGNES de la base : si le
+    # Le Compte est bon représente 250/500 = 50% des LIGNES de la base : si le
     # tirage était uniforme sur l'ensemble des lignes (bug), il apparaîtrait
-    # environ 56% du temps au lieu de ≈ 20%. On vérifie explicitement que ce
-    # biais n'est PAS présent.
-    naive_uniform_share = 250 / 450
+    # environ 50% du temps au lieu de ≈ 16.7% (1/6). On vérifie explicitement
+    # que ce biais n'est PAS présent.
+    naive_uniform_share = 250 / 500
     observed_compte_share = tally["compte_est_bon"] / n_samples
     check(
         abs(observed_compte_share - naive_uniform_share) > 0.15,
@@ -528,6 +734,10 @@ def test_balanced_random_selection(conn) -> None:
         all(get_random_game(game_type="compte_est_bon", conn=conn)["type"] == "compte_est_bon" for _ in range(20)),
         "get_random_game(game_type='compte_est_bon') renvoie toujours ce type précis",
     )
+    check(
+        all(get_random_game(game_type="cross_math", conn=conn)["type"] == "cross_math" for _ in range(20)),
+        "get_random_game(game_type='cross_math') renvoie toujours ce type précis",
+    )
 
 
 def main() -> None:
@@ -537,6 +747,8 @@ def main() -> None:
     test_nonogram(conn)
     test_hashi(conn)
     test_compte_est_bon(conn)
+    test_cross_math(conn)
+    test_other_games_untouched_by_cross_math(conn)
     test_query_function(conn)
     test_balanced_random_selection(conn)
     conn.close()

@@ -1,5 +1,5 @@
 /**
- * BrainTrain - Application Principale & Routeur SPA (5 Jeux)
+ * BrainTrain - Application Principale & Routeur SPA (6 Jeux)
  */
 
 import { fetchRandomGame, fetchGamesList } from './api.js';
@@ -9,6 +9,7 @@ import { MastermindGame, COLOR_NAMES } from './mastermind.js';
 import { NonogramGame } from './nonogram.js';
 import { HashiGame } from './hashi.js';
 import { CompteEstBonGame } from './compte_est_bon.js';
+import { CrossMathGame } from './cross_math.js';
 
 const STORAGE_KEY_SESSION = 'braintrain_active_session';
 const STORAGE_KEY_STATS = 'braintrain_stats';
@@ -19,6 +20,7 @@ const GAME_NAMES = {
   nonogram: 'Nonogramme',
   hashi: 'Hashi (Ponts)',
   compte_est_bon: 'Le Compte est bon',
+  cross_math: 'Cross Math',
 };
 
 class BrainTrainApp {
@@ -36,6 +38,7 @@ class BrainTrainApp {
     this.nonogramEngine = null;
     this.hashiEngine = null;
     this.compteEstBonEngine = null;
+    this.crossMathEngine = null;
 
     this.initElements();
     this.initEngines();
@@ -52,6 +55,7 @@ class BrainTrainApp {
     this.viewNonogram = document.getElementById('view-nonogram');
     this.viewHashi = document.getElementById('view-hashi');
     this.viewCompteEstBon = document.getElementById('view-compte-est-bon');
+    this.viewCrossMath = document.getElementById('view-cross-math');
 
     // Éléments Accueil
     this.resumeBanner = document.getElementById('resume-banner');
@@ -76,7 +80,7 @@ class BrainTrainApp {
     // Chronomètre global
     this.timer = new GameTimer({
       onTick: (secs, formatted) => {
-        ['sudoku', 'mastermind', 'nonogram', 'hashi', 'ceb'].forEach(t => {
+        ['sudoku', 'mastermind', 'nonogram', 'hashi', 'ceb', 'cm'].forEach(t => {
           const el = document.getElementById(`${t}-timer-text`);
           if (el) el.textContent = formatted;
         });
@@ -188,6 +192,19 @@ class BrainTrainApp {
       },
       onVictory: (gameData) => this.handleVictory('compte_est_bon', gameData, '🎯 Le compte est bon ! Vous avez exactement atteint le nombre cible !'),
     });
+
+    // 6. Moteur Cross Math
+    this.crossMathEngine = new CrossMathGame({
+      boardContainerEl: document.getElementById('cm-board-container'),
+      bankContainerEl: document.getElementById('cm-bank-container'),
+      onStateChange: (gameState) => {
+        if (this.activeSession && this.activeSession.type === 'cross_math') {
+          this.activeSession.gameState = gameState;
+          this.saveSession();
+        }
+      },
+      onVictory: (gameData) => this.handleVictory('cross_math', gameData, '➕ Bravo ! Toutes les équations horizontales et verticales sont résolues !'),
+    });
   }
 
   handleVictory(gameType, gameData, customMessage) {
@@ -272,6 +289,7 @@ class BrainTrainApp {
     document.getElementById('btn-nonogram-back')?.addEventListener('click', () => this.confirmExitGame());
     document.getElementById('btn-hashi-back')?.addEventListener('click', () => this.confirmExitGame());
     document.getElementById('btn-ceb-back')?.addEventListener('click', () => this.confirmExitGame());
+    document.getElementById('btn-cm-back')?.addEventListener('click', () => this.confirmExitGame());
 
     // Contrôles Sudoku
     document.getElementById('btn-sudoku-notes')?.addEventListener('click', () => this.sudokuEngine.toggleNotesMode());
@@ -307,6 +325,12 @@ class BrainTrainApp {
     document.getElementById('btn-ceb-hint')?.addEventListener('click', () => this.compteEstBonEngine.giveHint());
     document.getElementById('btn-ceb-solution')?.addEventListener('click', () => this.compteEstBonEngine.showSolutionModal());
 
+    // Contrôles Cross Math
+    document.getElementById('btn-cm-undo')?.addEventListener('click', () => this.crossMathEngine.undo());
+    document.getElementById('btn-cm-clear')?.addEventListener('click', () => this.crossMathEngine.clear());
+    document.getElementById('btn-cm-hint')?.addEventListener('click', () => this.crossMathEngine.giveHint());
+    document.getElementById('btn-cm-check')?.addEventListener('click', () => this.crossMathEngine.verifyGrid());
+
     // Toast listener
     window.addEventListener('app:toast', (e) => this.showToast(e.detail.message));
 
@@ -331,6 +355,8 @@ class BrainTrainApp {
       this.viewHashi.classList.add('active');
     } else if (viewName === 'compte_est_bon') {
       this.viewCompteEstBon.classList.add('active');
+    } else if (viewName === 'cross_math') {
+      this.viewCrossMath.classList.add('active');
     }
   }
 
@@ -383,6 +409,10 @@ class BrainTrainApp {
         this.setupGameHeader('ceb', gameData, `${gameData.available_numbers.length} nombres • Cible ${gameData.target}`);
         this.compteEstBonEngine.loadGame(gameData);
         this.showView('compte_est_bon');
+      } else if (gameData.type === 'cross_math') {
+        this.setupGameHeader('cm', gameData, `Grille ${gameData.grid_size}×${gameData.grid_size} • ~${gameData.estimated_duration_minutes} min`);
+        this.crossMathEngine.loadGame(gameData);
+        this.showView('cross_math');
       }
 
       this.timer.reset(0);
@@ -450,6 +480,10 @@ class BrainTrainApp {
       this.setupGameHeader('ceb', gameData, `${gameData.available_numbers.length} nombres`);
       this.compteEstBonEngine.loadGame(gameData, gameState);
       this.showView('compte_est_bon');
+    } else if (type === 'cross_math') {
+      this.setupGameHeader('cm', gameData, `Grille ${gameData.grid_size}×${gameData.grid_size}`);
+      this.crossMathEngine.loadGame(gameData, gameState);
+      this.showView('cross_math');
     }
 
     this.timer.reset(timerSeconds || 0);

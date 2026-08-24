@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BrainTrain - Serveur Backend & Fichiers Statiques.
-Supporte 5 jeux : Sudoku, Mastermind, Nonogramme, Hashi (Ponts), Le Compte est bon.
+Supporte 6 jeux : Sudoku, Mastermind, Nonogramme, Hashi (Ponts), Le Compte est bon, Cross Math.
 Utilise exclusivement la bibliothèque standard Python pour un démarrage rapide sans dépendances.
 """
 
@@ -27,6 +27,7 @@ import db  # noqa: E402
 import query  # noqa: E402
 from hashi_generator import validate_hashi_solution  # noqa: E402
 from compte_est_bon_generator import verify_solution as verify_compte_est_bon_solution  # noqa: E402
+from cross_math_generator import validate_player_grid  # noqa: E402
 
 
 def evaluate_mastermind_guess(secret_code: list[int], guess: list[int]) -> tuple[int, int]:
@@ -61,7 +62,14 @@ def sanitize_game_data(game: sqlite3.Row | dict, hide_solution: bool = True) -> 
     g_type = d.get("type")
 
     # Désérialisation JSON si nécessaire
-    for field in ("row_clues", "col_clues", "islands", "solution_bridges", "available_numbers", "allowed_operations", "solution_steps"):
+    json_fields = (
+        "row_clues", "col_clues",
+        "islands", "solution_bridges",
+        "available_numbers", "allowed_operations", "solution_steps",
+        "given_grid", "solution_grid", "row_operators", "col_operators",
+        "row_results", "col_results"
+    )
+    for field in json_fields:
         if field in d and isinstance(d[field], str):
             try:
                 d[field] = json.loads(d[field])
@@ -82,6 +90,8 @@ def sanitize_game_data(game: sqlite3.Row | dict, hide_solution: bool = True) -> 
                 del d["solution_steps"]
             if "solution_readable" in d:
                 del d["solution_readable"]
+        elif g_type == "cross_math" and "solution_grid" in d:
+            del d["solution_grid"]
 
     return d
 
@@ -123,27 +133,28 @@ class BrainTrainHandler(SimpleHTTPRequestHandler):
         query_params = urllib.parse.parse_qs(parsed_url.query)
 
         # Health Check
-        if path == "/api/health":
-            self.send_json_response({"status": "ok", "app": "BrainTrain", "version": "3.0"})
+        if path in ("/api/health", "/health"):
+            self.send_json_response({"status": "ok", "app": "BrainTrain", "version": "4.0"})
             return
 
-        # Tirage d'un jeu aléatoire (tirage équilibré entre les 5 types)
-        if path == "/api/games/random":
+        # Tirage d'un jeu aléatoire (tirage équilibré entre les 6 types)
+        if path in ("/api/games/random", "/games/random"):
             self.handle_get_random_game(query_params)
             return
 
         # Liste des jeux selon filtres
-        if path == "/api/games":
+        if path in ("/api/games", "/games"):
             self.handle_get_games(query_params)
             return
 
         # Routes spécifiques par jeu
         parts = path.split("/")
-        if len(parts) >= 5 and parts[1] == "api" and parts[2] == "games":
-            game_type = parts[3]
-            if parts[4].isdigit():
-                game_id = int(parts[4])
-                is_solution = len(parts) == 6 and parts[5] in ("solution", "reveal")
+        start_idx = 3 if len(parts) > 1 and parts[1] == "api" else 2
+        if len(parts) >= start_idx + 2 and parts[start_idx - 1] == "games":
+            game_type = parts[start_idx]
+            if parts[start_idx + 1].isdigit():
+                game_id = int(parts[start_idx + 1])
+                is_solution = len(parts) == start_idx + 3 and parts[start_idx + 2] in ("solution", "reveal")
 
                 if game_type == "sudoku":
                     if is_solution:
@@ -175,6 +186,12 @@ class BrainTrainHandler(SimpleHTTPRequestHandler):
                     else:
                         self.handle_get_compte_est_bon(game_id)
                     return
+                elif game_type == "cross_math":
+                    if is_solution:
+                        self.handle_get_cross_math_solution(game_id)
+                    else:
+                        self.handle_get_cross_math(game_id)
+                    return
 
         # Service de fichiers statiques
         if not path.startswith("/api"):
@@ -205,24 +222,28 @@ class BrainTrainHandler(SimpleHTTPRequestHandler):
             self.send_error_response("Format JSON invalide", status=400)
             return
 
-        if path == "/api/games/sudoku/verify":
+        if path in ("/api/games/sudoku/verify", "/games/sudoku/verify"):
             self.handle_verify_sudoku(payload)
             return
 
-        if path == "/api/games/mastermind/guess":
+        if path in ("/api/games/mastermind/guess", "/games/mastermind/guess"):
             self.handle_mastermind_guess(payload)
             return
 
-        if path == "/api/games/nonogram/verify":
+        if path in ("/api/games/nonogram/verify", "/games/nonogram/verify"):
             self.handle_verify_nonogram(payload)
             return
 
-        if path == "/api/games/hashi/verify":
+        if path in ("/api/games/hashi/verify", "/games/hashi/verify"):
             self.handle_verify_hashi(payload)
             return
 
-        if path == "/api/games/compte_est_bon/verify":
+        if path in ("/api/games/compte_est_bon/verify", "/games/compte_est_bon/verify"):
             self.handle_verify_compte_est_bon(payload)
+            return
+
+        if path in ("/api/games/cross_math/verify", "/games/cross_math/verify"):
+            self.handle_verify_cross_math(payload)
             return
 
         self.send_error_response("Route POST non trouvée", status=404)
@@ -514,7 +535,7 @@ class BrainTrainHandler(SimpleHTTPRequestHandler):
 
     def handle_verify_compte_est_bon(self, payload: dict) -> None:
         game_id = payload.get("id")
-        steps = payload.get("steps")  # liste de {"a": x, "op": "+", "b": y, "result": z}
+        steps = payload.get("steps")
 
         if not game_id or not isinstance(steps, list):
             self.send_error_response("Paramètres 'id' et 'steps' requis", status=400)
@@ -541,6 +562,78 @@ class BrainTrainHandler(SimpleHTTPRequestHandler):
             "errors": errors,
         })
 
+    # --- CROSS MATH ---
+    def handle_get_cross_math(self, game_id: int) -> None:
+        conn = db.get_connection()
+        row = conn.execute("SELECT * FROM cross_math_puzzles WHERE id = ?", (game_id,)).fetchone()
+        conn.close()
+        if not row:
+            self.send_error_response("Niveau Cross Math non trouvé", status=404)
+            return
+        self.send_json_response(sanitize_game_data(dict(row, type="cross_math"), hide_solution=True))
+
+    def handle_get_cross_math_solution(self, game_id: int) -> None:
+        conn = db.get_connection()
+        row = conn.execute("SELECT id, solution_grid FROM cross_math_puzzles WHERE id = ?", (game_id,)).fetchone()
+        conn.close()
+        if not row:
+            self.send_error_response("Niveau Cross Math non trouvé", status=404)
+            return
+        sol_grid = json.loads(row["solution_grid"])
+        self.send_json_response({
+            "id": row["id"],
+            "solution_grid": sol_grid,
+        })
+
+    def handle_verify_cross_math(self, payload: dict) -> None:
+        game_id = payload.get("id")
+        proposed_grid = payload.get("grid")  # list[list[int]]
+
+        if not game_id or not isinstance(proposed_grid, list):
+            self.send_error_response("Paramètres 'id' et 'grid' requis", status=400)
+            return
+
+        conn = db.get_connection()
+        row = conn.execute("SELECT * FROM cross_math_puzzles WHERE id = ?", (game_id,)).fetchone()
+        conn.close()
+
+        if not row:
+            self.send_error_response("Niveau Cross Math non trouvé", status=404)
+            return
+
+        given_grid = json.loads(row["given_grid"])
+        row_operators = json.loads(row["row_operators"])
+        col_operators = json.loads(row["col_operators"])
+        row_results = json.loads(row["row_results"])
+        col_results = json.loads(row["col_results"])
+        available_numbers = json.loads(row["available_numbers"])
+
+        # Vérifie si toutes les cases sont remplies
+        k = row["grid_size"]
+        has_blanks = any(proposed_grid[r][c] is None for r in range(k) for c in range(len(proposed_grid[r])))
+        if has_blanks:
+            self.send_json_response({
+                "id": game_id,
+                "is_valid": True,
+                "is_complete": False,
+                "errors": ["Certaines cases sont encore vides."],
+            })
+            return
+
+        errors = validate_player_grid(
+            given_grid, row_operators, col_operators,
+            row_results, col_results, available_numbers,
+            proposed_grid
+        )
+        is_complete = len(errors) == 0
+
+        self.send_json_response({
+            "id": game_id,
+            "is_valid": len(errors) == 0,
+            "is_complete": is_complete,
+            "errors": errors,
+        })
+
 
 def run_server(port: int = 8000) -> None:
     mimetypes.add_type("application/javascript", ".js")
@@ -551,8 +644,8 @@ def run_server(port: int = 8000) -> None:
 
     server_address = ("", port)
     httpd = ThreadingHTTPServer(server_address, BrainTrainHandler)
-    print(f"🧠 BrainTrain Serveur v3 démarré sur http://localhost:{port}")
-    print("5 jeux supportés : Sudoku, Mastermind, Nonogramme, Hashi, Compte est bon")
+    print(f"🧠 BrainTrain Serveur v4 démarré sur http://localhost:{port}")
+    print("6 jeux supportés : Sudoku, Mastermind, Nonogramme, Hashi, Compte est bon, Cross Math")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

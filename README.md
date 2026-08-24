@@ -1,32 +1,25 @@
-# 🧠 BrainTrain — Application d'Entraînement Mental (v3)
+# 🧠 BrainTrain — Application d'Entraînement Mental (v4)
 
-Interface web mobile-first moderne, soignée et rapide pour l'entraînement cérébral quotidien, proposant **5 jeux** jouables directement dans le navigateur :
+Interface web mobile-first moderne, soignée et ultra-rapide pour l'entraînement cérébral quotidien, proposant **6 jeux** jouables directement dans le navigateur :
 1. 🔢 **Sudoku** (50 grilles)
 2. 🎨 **Mastermind** (50 parties)
 3. 🖼️ **Nonogramme / Picross** (50 grilles : 5×5, 8×8, 10×10)
-4. 🌉 **Hashi / Ponts** (50 puzzles : 6×6, 8×8, 10×10)
-5. 🧮 **Le Compte est bon** (250 niveaux : 4, 5 ou 6 nombres avec cible)
+4. 🌉 **Hashi / Ponts** (50 puzzles : 6×6, 8×8, 10×10 avec quadrillage)
+5. 🧮 **Le Compte est bon** (250 niveaux avec tuiles interactives)
+6. ➕ **Cross Math** (50 niveaux : équations croisées 3×3 et 4×4)
 
-L'application s'appuie sur la base de données SQLite `files/mental_training.db` préexistante (**450 parties au total**) et intègre un **tirage aléatoire équilibré en deux étapes** pour garantir une chance égale à chaque type de jeu.
+L'application s'appuie sur la base de données SQLite `files/mental_training.db` préexistante (**500 parties au total**) et intègre un **tirage aléatoire équilibré en deux étapes** pour garantir une chance égale à chaque type de jeu (~16.7%).
 
 ---
 
-## ✨ Fonctionnalités
+## ✨ Les 6 Jeux Disponibles
 
-- **Écran d'accueil rapide (lancement en 2 clics)** :
-  - Choix du jeu : *Tous (Aléatoire équilibré)*, *Sudoku*, *Mastermind*, *Nonogramme*, *Hashi*, *Le Compte est bon*.
-  - Choix du temps disponible : *5 min*, *10 min*, *20 min*, ou *Sans limite*.
-  - Choix du niveau de difficulté : *Facile*, *Moyen*, *Difficile*.
-  - Compteur dynamique en temps réel des parties correspondantes (sur les 450 parties en base).
-- **Le Compte est bon** :
-  - Bannière cible élégante, zone de calcul tactile avec 3 emplacements dynamiques.
-  - Tuiles de nombres interactives (les nombres utilisés sont remplacés par la tuile résultat).
-  - 4 opérateurs tactiles (+, −, ×, ÷) avec validation stricte (pas de division non entière, pas de résultat négatif).
-  - Historique complet des calculs, Annulation (Undo), Réinitialisation et Révélation de solution.
-- **Sudoku, Mastermind, Nonogramme, Hashi** :
-  - Toutes les fonctionnalités tactiles, vérifications en direct et aides de jeu.
-- **Sauvegarde locale automatique (`localStorage`)** :
-  - Reprise transparente de n'importe lequel des 5 jeux dès la réouverture de la page.
+- **Sudoku** : Grille 9x9 tactile, surbrillances, pavé 1-9 responsive mobile, mode crayon, annulation, indices.
+- **Mastermind** : Pions de couleur différenciés (4, 6 ou 8 couleurs), fentes tactiles, verdict immédiat.
+- **Nonogramme** : Grilles avec découpage symétrique par blocs, coins arrondis nets, modes Remplir/Croix.
+- **Hashi (Ponts)** : Quadrillage d'alignement en arrière-plan, dimensionnement proportionnel des îles anti-chevauchement, diagnostic pas à pas.
+- **Le Compte est bon** : Sélection de 2 nombres et 1 opérateur -> remplacement automatique par la tuile résultat.
+- **Cross Math** : Grille croisée d'équations avec calcul strict de gauche à droite et de haut en bas, réserve de nombres disponibles, validation en temps réel de chaque ligne et colonne.
 
 ---
 
@@ -43,7 +36,7 @@ python3 server.py
 ## 🧪 Tests et Validation
 
 ```bash
-# Validation complète des 450 parties SQLite
+# Validation complète des 500 parties SQLite
 python3 files/test_data.py
 
 # Validation de l'API et de l'intégration

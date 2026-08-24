@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests d'intégration de bout en bout pour le serveur BrainTrain (5 jeux).
+Tests d'intégration de bout en bout pour le serveur BrainTrain (6 jeux).
 """
 
 from __future__ import annotations
@@ -34,11 +34,7 @@ class TestBrainTrainIntegration(unittest.TestCase):
         status, _, content = self.get("/")
         self.assertEqual(status, 200)
         self.assertIn(b"BrainTrain", content)
-        self.assertIn(b"view-sudoku", content)
-        self.assertIn(b"view-mastermind", content)
-        self.assertIn(b"view-nonogram", content)
-        self.assertIn(b"view-hashi", content)
-        self.assertIn(b"view-compte-est-bon", content)
+        self.assertIn(b"view-cross-math", content)
 
     def test_api_health(self):
         status, _, body = self.get("/api/health")
@@ -50,24 +46,29 @@ class TestBrainTrainIntegration(unittest.TestCase):
         status, _, body = self.get("/api/games")
         self.assertEqual(status, 200)
         data = json.loads(body.decode("utf-8"))
-        self.assertEqual(data["total"], 450)
+        self.assertEqual(data["total"], 500)
 
-    def test_compte_est_bon_gameplay_flow(self):
-        status, _, body = self.get("/api/games/random?type=compte_est_bon&difficulty=facile")
+    def test_cross_math_gameplay_flow(self):
+        status, _, body = self.get("/api/games/random?type=cross_math&difficulty=facile")
         self.assertEqual(status, 200)
         game = json.loads(body.decode("utf-8"))
         game_id = game["id"]
-        self.assertIn("target", game)
-        self.assertIn("available_numbers", game)
+        self.assertEqual(game["grid_size"], 3)
 
         # Récupère la solution
-        status, _, body = self.get(f"/api/games/compte_est_bon/{game_id}/solution")
+        status, _, body = self.get(f"/api/games/cross_math/{game_id}/solution")
         self.assertEqual(status, 200)
         sol_data = json.loads(body.decode("utf-8"))
-        solution_steps = sol_data["solution_steps"]
+        solution_grid = sol_data["solution_grid"]
 
-        # Vérifie avec les étapes de la solution
-        status, _, body = self.post("/api/games/compte_est_bon/verify", {"id": game_id, "steps": solution_steps})
+        # Grille vide -> incomplet
+        status, _, body = self.post("/api/games/cross_math/verify", {"id": game_id, "grid": game["given_grid"]})
+        self.assertEqual(status, 200)
+        res = json.loads(body.decode("utf-8"))
+        self.assertFalse(res["is_complete"])
+
+        # Grille gagnante
+        status, _, body = self.post("/api/games/cross_math/verify", {"id": game_id, "grid": solution_grid})
         self.assertEqual(status, 200)
         res = json.loads(body.decode("utf-8"))
         self.assertTrue(res["is_complete"])

@@ -7,11 +7,13 @@ Génère :
 - 50 Nonogrammes (20 faciles / 20 moyens / 10 difficiles)
 - 50 puzzles Hashi / Ponts (20 faciles / 20 moyens / 10 difficiles)
 - 250 niveaux du Compte est bon (100 faciles / 100 moyens / 50 difficiles)
+- 50 niveaux Cross Math (20 faciles / 20 moyens / 10 difficiles)
 
-IMPORTANT : les 50 Sudoku et 50 Mastermind déjà présents en base ne sont
-JAMAIS supprimés ni régénérés par ce script (ils ne sont générés que si
-les tables correspondantes sont vides). Les tables Nonogramme, Hashi et
-Compte est bon, elles, sont vidées puis régénérées à chaque exécution.
+IMPORTANT : ce script est PUREMENT ADDITIF. Pour CHAQUE type de jeu, les
+niveaux ne sont générés QUE si la table correspondante est vide ; aucune
+donnée existante n'est jamais supprimée, remplacée ou régénérée, quel que
+soit le type (y compris lors d'une réexécution du script après l'ajout
+d'un nouveau type de jeu).
 
 Usage :
     python generate_data.py
@@ -26,6 +28,7 @@ from mastermind_generator import generate_mastermind_game
 from nonogram_generator import generate_nonogram_puzzle
 from hashi_generator import generate_hashi_puzzle
 from compte_est_bon_generator import generate_compte_est_bon_puzzle
+from cross_math_generator import generate_cross_math_puzzle
 import json
 
 SUDOKU_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
@@ -33,6 +36,7 @@ MASTERMIND_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 15}
 NONOGRAM_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 HASHI_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 COMPTE_EST_BON_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
+CROSS_MATH_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 
 DISTRIBUTION = {"facile": 20, "moyen": 20, "difficile": 10}  # 50 au total
 COMPTE_EST_BON_DISTRIBUTION = {"facile": 100, "moyen": 100, "difficile": 50}  # 250 au total
@@ -247,44 +251,83 @@ def generate_compte_est_bon_batch(conn) -> None:
     conn.commit()
 
 
+def generate_cross_math_batch(conn) -> None:
+    print("\nGénération des niveaux Cross Math...")
+    seen_signatures = set()
+    total = 0
+    target_total = sum(DISTRIBUTION.values())
+
+    for difficulty, count in DISTRIBUTION.items():
+        for i in range(count):
+            t0 = time.time()
+            while True:
+                puzzle = generate_cross_math_puzzle(difficulty)
+                if puzzle["canonical_key"] not in seen_signatures:
+                    seen_signatures.add(puzzle["canonical_key"])
+                    break
+            elapsed = time.time() - t0
+
+            conn.execute(
+                """
+                INSERT INTO cross_math_puzzles
+                    (grid_size, given_grid, solution_grid, row_operators, col_operators,
+                     row_results, col_results, available_numbers,
+                     difficulty, estimated_duration_minutes, solution_unique)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    puzzle["grid_size"],
+                    json.dumps(puzzle["given_grid"]),
+                    json.dumps(puzzle["solution_grid"]),
+                    json.dumps(puzzle["row_operators"]),
+                    json.dumps(puzzle["col_operators"]),
+                    json.dumps(puzzle["row_results"]),
+                    json.dumps(puzzle["col_results"]),
+                    json.dumps(puzzle["available_numbers"]),
+                    difficulty,
+                    CROSS_MATH_DURATIONS[difficulty],
+                    1 if puzzle["solution_unique"] else 0,
+                ),
+            )
+            total += 1
+            print(
+                f"  [{total}/{target_total}] {difficulty:<10} "
+                f"grille {puzzle['grid_size']}x{puzzle['grid_size']}, "
+                f"{len(puzzle['available_numbers'])} case(s) à remplir  ({elapsed:.3f}s)"
+            )
+    conn.commit()
+
+
 def main() -> None:
     print("=== Remplissage de la base d'entraînement mental ===\n")
-    conn = init_db(reset=False)  # ne supprime jamais la base existante
+    conn = init_db(reset=False)  # ne supprime jamais la base existante ; crée les tables manquantes
 
-    sudoku_count = conn.execute("SELECT COUNT(*) FROM sudoku_puzzles").fetchone()[0]
-    if sudoku_count == 0:
-        generate_sudoku_batch(conn)
-    else:
-        print(f"Sudoku : {sudoku_count} grilles déjà présentes en base, conservées telles quelles.")
+    # IMPORTANT : chaque type de jeu n'est généré QUE si sa table est
+    # vide. Aucune donnée existante n'est jamais supprimée, remplacée ou
+    # régénérée par ce script, quel que soit le type — Sudoku et
+    # Mastermind (v1), Nonogramme/Hashi/Compte est bon (v2/v3) et Cross
+    # Math (v4) suivent tous exactement la même règle.
+    batches = [
+        ("sudoku_puzzles", "Sudoku", generate_sudoku_batch),
+        ("mastermind_games", "Mastermind", generate_mastermind_batch),
+        ("nonogram_puzzles", "Nonogramme", generate_nonogram_batch),
+        ("hashi_puzzles", "Hashi", generate_hashi_batch),
+        ("compte_est_bon_puzzles", "Compte est bon", generate_compte_est_bon_batch),
+        ("cross_math_puzzles", "Cross Math", generate_cross_math_batch),
+    ]
 
-    mastermind_count = conn.execute("SELECT COUNT(*) FROM mastermind_games").fetchone()[0]
-    if mastermind_count == 0:
-        generate_mastermind_batch(conn)
-    else:
-        print(f"Mastermind : {mastermind_count} parties déjà présentes en base, conservées telles quelles.")
+    for table, label, batch_fn in batches:
+        count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+        if count == 0:
+            batch_fn(conn)
+        else:
+            print(f"{label} : {count} niveaux déjà présents en base, conservés tels quels.")
 
-    # Nonogramme, Hashi et Compte est bon : tables régénérées à chaque
-    # exécution du script (elles ne contiennent pas de données à préserver
-    # comme Sudoku/Mastermind)
-    conn.execute("DELETE FROM nonogram_puzzles")
-    conn.execute("DELETE FROM hashi_puzzles")
-    conn.execute("DELETE FROM compte_est_bon_puzzles")
-    conn.commit()
-    generate_nonogram_batch(conn)
-    generate_hashi_batch(conn)
-    generate_compte_est_bon_batch(conn)
-
-    sudoku_count = conn.execute("SELECT COUNT(*) FROM sudoku_puzzles").fetchone()[0]
-    mastermind_count = conn.execute("SELECT COUNT(*) FROM mastermind_games").fetchone()[0]
-    nonogram_count = conn.execute("SELECT COUNT(*) FROM nonogram_puzzles").fetchone()[0]
-    hashi_count = conn.execute("SELECT COUNT(*) FROM hashi_puzzles").fetchone()[0]
-    compte_count = conn.execute("SELECT COUNT(*) FROM compte_est_bon_puzzles").fetchone()[0]
-
-    print(
-        f"\nTerminé : {sudoku_count} Sudoku, {mastermind_count} Mastermind, "
-        f"{nonogram_count} Nonogrammes, {hashi_count} Hashi, "
-        f"{compte_count} Compte est bon."
-    )
+    counts = {
+        label: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+        for table, label, _ in batches
+    }
+    print("\nTerminé : " + ", ".join(f"{v} {k}" for k, v in counts.items()) + ".")
     conn.close()
 
 
