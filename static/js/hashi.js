@@ -248,6 +248,36 @@ export class HashiGame {
   async verifyGrid() {
     if (this.isCompleted) return;
     try {
+      const islands = this.gameData.islands;
+      const bridgeCounts = new Array(islands.length).fill(0);
+      for (const [key, count] of this.bridges.entries()) {
+        const [i, j] = this._parseBridgeKey(key);
+        bridgeCounts[i] += count;
+        bridgeCounts[j] += count;
+      }
+
+      // 1. Vérification des îles en surcapacité
+      const overIslands = [];
+      const incompleteIslands = [];
+      let missingBridgesTotal = 0;
+
+      islands.forEach(([r, c, targetVal], idx) => {
+        if (bridgeCounts[idx] > targetVal) {
+          overIslands.push(idx + 1);
+        } else if (bridgeCounts[idx] < targetVal) {
+          incompleteIslands.push(idx);
+          missingBridgesTotal += (targetVal - bridgeCounts[idx]);
+        }
+      });
+
+      if (overIslands.length > 0) {
+        window.dispatchEvent(new CustomEvent('app:toast', {
+          detail: { message: `⚠️ Trop de ponts sur l'île #${overIslands[0]} (retirez des ponts).` }
+        }));
+        return;
+      }
+
+      // 2. Appel de l'API pour validation complète
       const bridgesList = this.getBridgesList();
       const res = await verifyHashiBridges(this.gameData.id, bridgesList);
 
@@ -255,15 +285,34 @@ export class HashiGame {
         this.isCompleted = true;
         this.saveState();
         this.onVictory(this.gameData);
-      } else if (res.errors && res.errors.length > 0) {
-        window.dispatchEvent(new CustomEvent('app:toast', {
-          detail: { message: `⚠️ ${res.errors[0]}` }
-        }));
-      } else {
-        window.dispatchEvent(new CustomEvent('app:toast', {
-          detail: { message: '✨ Les ponts actuels sont valides ! Continuez.' }
-        }));
+        return;
       }
+
+      // 3. Vérification de connexité (réseau isolé)
+      if (incompleteIslands.length === 0) {
+        // Tous les nombres sont atteints mais le graphe n'est pas connexe
+        window.dispatchEvent(new CustomEvent('app:toast', {
+          detail: { message: '⚠️ Toutes les valeurs sont atteintes mais les îles forment des groupes isolés. Reliez toutes les îles en un seul réseau !' }
+        }));
+        return;
+      }
+
+      // 4. Mise en valeur visuelle des îles incomplètes
+      const islandEls = this.container.querySelectorAll('.hashi-island');
+      incompleteIslands.forEach(idx => {
+        if (islandEls[idx]) {
+          islandEls[idx].classList.add('status-incomplete-highlight');
+          setTimeout(() => islandEls[idx]?.classList.remove('status-incomplete-highlight'), 2200);
+        }
+      });
+
+      const countIncomplete = incompleteIslands.length;
+      window.dispatchEvent(new CustomEvent('app:toast', {
+        detail: {
+          message: `🔍 ${countIncomplete} île${countIncomplete > 1 ? 's' : ''} à compléter (${missingBridgesTotal / 2} ponts restants). Les ponts existants sont valides.`
+        }
+      }));
+
     } catch (e) {
       window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: e.message } }));
     }
@@ -287,7 +336,7 @@ export class HashiGame {
           this.checkAutoCompletion();
 
           window.dispatchEvent(new CustomEvent('app:toast', {
-            detail: { message: `💡 Pont placé entre les îles #${i + 1} et #${j + 1} !` }
+            detail: { message: `💡 Indice : pont placé entre les îles #${i + 1} et #${j + 1} !` }
           }));
           return;
         }
@@ -312,12 +361,76 @@ export class HashiGame {
       bridgeCounts[j] += count;
     }
 
-    // 1. Calque SVG pour les ponts
+    // 1. Calque SVG pour le quadrillage et les ponts
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'hashi-svg-layer');
     svg.setAttribute('viewBox', `0 0 ${num_cols * 100} ${num_rows * 100}`);
 
-    // Rendu des ponts existants
+    // --- A. QUADRILLAGE D'ALIGNEMENT ---
+    const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    gridGroup.setAttribute('class', 'hashi-grid-background');
+
+    // Lignes horizontales
+    for (let r = 0; r < num_rows; r++) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', 25);
+      line.setAttribute('y1', r * 100 + 50);
+      line.setAttribute('x2', num_cols * 100 - 25);
+      line.setAttribute('y2', r * 100 + 50);
+      line.setAttribute('class', 'hashi-grid-line');
+      gridGroup.appendChild(line);
+    }
+
+    // Lignes verticales
+    for (let c = 0; c < num_cols; c++) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', c * 100 + 50);
+      line.setAttribute('y1', 25);
+      line.setAttribute('x2', c * 100 + 50);
+      line.setAttribute('y2', num_rows * 100 - 25);
+      line.setAttribute('class', 'hashi-grid-line');
+      gridGroup.appendChild(line);
+    }
+
+    // Points d'intersection subtils
+    for (let r = 0; r < num_rows; r++) {
+      for (let c = 0; c < num_cols; c++) {
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', c * 100 + 50);
+        dot.setAttribute('cy', r * 100 + 50);
+        dot.setAttribute('r', 2.5);
+        dot.setAttribute('class', 'hashi-grid-dot');
+        gridGroup.appendChild(dot);
+      }
+    }
+    svg.appendChild(gridGroup);
+
+    // --- B. PRÉVISUALISATION DES PONTS POTENTIELS ---
+    const potentialPartners = this.selectedIslandIdx !== null
+      ? this.getPotentialPartners(this.selectedIslandIdx).filter(p => this.canConnect(this.selectedIslandIdx, p))
+      : [];
+
+    if (this.selectedIslandIdx !== null) {
+      const [sr, sc] = islands[this.selectedIslandIdx];
+      const sx = sc * 100 + 50;
+      const sy = sr * 100 + 50;
+
+      potentialPartners.forEach(pIdx => {
+        const [pr, pc] = islands[pIdx];
+        const px = pc * 100 + 50;
+        const py = pr * 100 + 50;
+
+        const prevLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        prevLine.setAttribute('x1', sx);
+        prevLine.setAttribute('y1', sy);
+        prevLine.setAttribute('x2', px);
+        prevLine.setAttribute('y2', py);
+        prevLine.setAttribute('class', 'hashi-bridge-preview');
+        svg.appendChild(prevLine);
+      });
+    }
+
+    // --- C. RENDU DES PONTS PLACÉS ---
     for (const [key, count] of this.bridges.entries()) {
       if (count <= 0) continue;
       const [i, j] = this._parseBridgeKey(key);
@@ -401,20 +514,26 @@ export class HashiGame {
 
     board.appendChild(svg);
 
-    // 2. Calque HTML des Îles
+    // 2. Calque HTML des Îles (taille proportionnelle au quadrillage pour éviter tout chevauchement)
     const islandsLayer = document.createElement('div');
     islandsLayer.className = 'hashi-islands-layer';
 
-    const potentialPartners = this.selectedIslandIdx !== null
-      ? this.getPotentialPartners(this.selectedIslandIdx).filter(p => this.canConnect(this.selectedIslandIdx, p))
-      : [];
+    // Dimension d'île dynamique : 66% de la cellule max
+    const maxGridDim = Math.max(num_rows, num_cols);
+    const islandSizePct = (100 / maxGridDim) * 0.68;
+    const fontSizeRem = Math.max(0.75, Math.min(1.2, 11 / maxGridDim));
 
     islands.forEach(([r, c, targetVal], idx) => {
       const island = document.createElement('div');
       island.className = 'hashi-island';
       island.dataset.idx = idx;
 
-      // Positionnement fluide en pourcentage
+      // Taille proportionnelle au nombre de cases de la grille
+      island.style.width = `min(${islandSizePct}%, 44px)`;
+      island.style.height = `min(${islandSizePct}%, 44px)`;
+      island.style.fontSize = `${fontSizeRem}rem`;
+
+      // Positionnement précis au centre de la case
       const topPct = ((r + 0.5) / num_rows) * 100;
       const leftPct = ((c + 0.5) / num_cols) * 100;
       island.style.top = `${topPct}%`;
@@ -430,7 +549,7 @@ export class HashiGame {
         island.classList.add('status-over');
       }
 
-      // Sélection active
+      // Sélection active & cibles potentielles
       if (idx === this.selectedIslandIdx) {
         island.classList.add('selected');
       } else if (potentialPartners.includes(idx)) {
