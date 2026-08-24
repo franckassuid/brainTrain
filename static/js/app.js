@@ -320,6 +320,7 @@ class BrainTrainApp {
     document.getElementById('btn-cm-sort')?.addEventListener('click', () => this.crossMathEngine.toggleSortMode());
     document.getElementById('btn-cm-undo')?.addEventListener('click', () => this.crossMathEngine.undo());
     document.getElementById('btn-cm-clear')?.addEventListener('click', () => this.crossMathEngine.clear());
+    document.getElementById('btn-cm-reset')?.addEventListener('click', () => this.crossMathEngine.resetAll());
     document.getElementById('btn-cm-hint')?.addEventListener('click', () => this.crossMathEngine.giveHint());
     document.getElementById('btn-cm-check')?.addEventListener('click', () => this.crossMathEngine.verifyGrid());
 

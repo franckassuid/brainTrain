@@ -52,12 +52,23 @@ export class CrossMathGame {
   }
 
   toggleSortMode() {
-    this.sortMode = this.sortMode === 'asc' ? 'original' : 'asc';
+    if (this.sortMode === 'asc') {
+      this.sortMode = 'desc';
+    } else if (this.sortMode === 'desc') {
+      this.sortMode = 'original';
+    } else {
+      this.sortMode = 'asc';
+    }
     this.updateSortButtonUI();
     this.render();
     this.saveState();
+
+    let msg = '🔢 Nombres triés par ordre croissant';
+    if (this.sortMode === 'desc') msg = '🔢 Nombres triés par ordre décroissant';
+    else if (this.sortMode === 'original') msg = '🔀 Nombres dans l’ordre du tirage';
+
     window.dispatchEvent(new CustomEvent('app:toast', {
-      detail: { message: this.sortMode === 'asc' ? '🔢 Nombres triés par ordre croissant' : '🔀 Nombres dans l’ordre du tirage' }
+      detail: { message: msg }
     }));
   }
 
@@ -68,6 +79,9 @@ export class CrossMathGame {
       if (this.sortMode === 'asc') {
         icon.textContent = '⬆️';
         label.textContent = 'Trier : Croissant';
+      } else if (this.sortMode === 'desc') {
+        icon.textContent = '⬇️';
+        label.textContent = 'Trier : Décroissant';
       } else {
         icon.textContent = '🔀';
         label.textContent = 'Ordre : Tirage';
@@ -153,11 +167,31 @@ export class CrossMathGame {
 
   clear() {
     if (this.isCompleted) return;
+    if (this.selectedCell && this.gameData.given_grid[this.selectedCell.r][this.selectedCell.c] === null) {
+      if (this.currentGrid[this.selectedCell.r][this.selectedCell.c] !== null) {
+        this.setCell(this.selectedCell.r, this.selectedCell.c, null);
+        this.render();
+        this.saveState();
+        return;
+      }
+    }
+
+    // Si aucune case sélectionnée ou case déjà vide, effacer le dernier coup
+    if (this.history.length > 0) {
+      this.undo();
+    }
+  }
+
+  resetAll() {
+    if (this.isCompleted) return;
     this.currentGrid = this.gameData.given_grid.map(row => [...row]);
     this.history = [];
     this.selectedCell = null;
     this.render();
     this.saveState();
+    window.dispatchEvent(new CustomEvent('app:toast', {
+      detail: { message: '🔄 Grille réinitialisée' }
+    }));
   }
 
   evaluateChain(numbers, operators) {
@@ -360,27 +394,43 @@ export class CrossMathGame {
 
     this.boardContainer.appendChild(gridEl);
 
-    // 3. Rendu de la réserve de Nombres Disponibles (avec tri optionnel)
+    // 3. Rendu de la réserve de Nombres Disponibles (utilisés à la fin)
     this.bankContainer.innerHTML = '';
     const tempPlaced = { ...placedCounts };
+    const unused = [];
+    const used = [];
 
-    let listToDisplay = [...available_numbers];
-    if (this.sortMode === 'asc') {
-      listToDisplay.sort((a, b) => a - b);
+    for (const val of available_numbers) {
+      if (tempPlaced[val] && tempPlaced[val] > 0) {
+        used.push(val);
+        tempPlaced[val]--;
+      } else {
+        unused.push(val);
+      }
     }
 
-    listToDisplay.forEach((val) => {
+    if (this.sortMode === 'asc') {
+      unused.sort((a, b) => a - b);
+      used.sort((a, b) => a - b);
+    } else if (this.sortMode === 'desc') {
+      unused.sort((a, b) => b - a);
+      used.sort((a, b) => b - a);
+    }
+
+    // 1. Nombres disponibles (utilisables) en premier
+    unused.forEach((val) => {
       const tile = document.createElement('button');
       tile.className = 'cm-bank-tile';
       tile.textContent = val.toString();
+      tile.addEventListener('click', () => this.handleBankTileTap(val));
+      this.bankContainer.appendChild(tile);
+    });
 
-      if (tempPlaced[val] && tempPlaced[val] > 0) {
-        tile.classList.add('used');
-        tempPlaced[val]--;
-      } else {
-        tile.addEventListener('click', () => this.handleBankTileTap(val));
-      }
-
+    // 2. Nombres déjà utilisés placés à la fin de la liste
+    used.forEach((val) => {
+      const tile = document.createElement('button');
+      tile.className = 'cm-bank-tile used';
+      tile.textContent = val.toString();
       this.bankContainer.appendChild(tile);
     });
   }
