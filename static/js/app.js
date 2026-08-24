@@ -250,16 +250,7 @@ class BrainTrainApp {
       });
     });
 
-    // Sélecteur de Temps
-    document.querySelectorAll('#pill-duration .pill-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#pill-duration .pill-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const val = btn.dataset.duration;
-        this.currentFilter.maxDuration = val === 'all' ? null : parseInt(val, 10);
-        this.updateMatchCount();
-      });
-    });
+
 
     // Sélecteur de Difficulté
     document.querySelectorAll('#pill-difficulty .pill-btn').forEach(btn => {
