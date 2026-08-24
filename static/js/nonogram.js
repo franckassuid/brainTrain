@@ -176,12 +176,15 @@ export class NonogramGame {
     corner.className = 'nono-corner';
     table.appendChild(corner);
 
+    const colBlockSize = num_cols === 8 ? 4 : 5;
+    const rowBlockSize = num_rows === 8 ? 4 : 5;
+
     // 2. En-têtes Colonnes
     for (let c = 0; c < num_cols; c++) {
       const colHeader = document.createElement('div');
       colHeader.className = 'nono-col-header';
       colHeader.dataset.col = c;
-      if ((c + 1) % 5 === 0 && c < num_cols - 1) {
+      if (num_cols > 5 && (c + 1) % colBlockSize === 0 && c < num_cols - 1) {
         colHeader.classList.add('border-right-thick');
       }
 
@@ -202,7 +205,7 @@ export class NonogramGame {
       const rowHeader = document.createElement('div');
       rowHeader.className = 'nono-row-header';
       rowHeader.dataset.row = r;
-      if ((r + 1) % 5 === 0 && r < num_rows - 1) {
+      if (num_rows > 5 && (r + 1) % rowBlockSize === 0 && r < num_rows - 1) {
         rowHeader.classList.add('border-bottom-thick');
       }
 
@@ -225,8 +228,8 @@ export class NonogramGame {
         cell.dataset.row = r;
         cell.dataset.col = c;
 
-        if ((c + 1) % 5 === 0 && c < num_cols - 1) cell.classList.add('border-right-thick');
-        if ((r + 1) % 5 === 0 && r < num_rows - 1) cell.classList.add('border-bottom-thick');
+        if (num_cols > 5 && (c + 1) % colBlockSize === 0 && c < num_cols - 1) cell.classList.add('border-right-thick');
+        if (num_rows > 5 && (r + 1) % rowBlockSize === 0 && r < num_rows - 1) cell.classList.add('border-bottom-thick');
 
         cell.addEventListener('click', () => this.handleCellTap(pos));
         table.appendChild(cell);
