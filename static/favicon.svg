@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+    <linearGradient id="brain-glow" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E0E7FF" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg-grad)" />
+  <path d="M24 20C21.2386 20 19 22.2386 19 25C19 25.4326 19.055 25.8523 19.1581 26.2524C17.3005 27.2429 16 29.2144 16 31.5C16 33.2721 16.7909 34.8587 18.0483 35.9184C17.4042 36.8778 17 38.0267 17 39.2727C17 42.4358 19.5642 45 22.7273 45C23.9482 45 25.0782 44.6183 26.0094 43.9686C27.027 45.2287 28.6226 46 30.4 46C31.2828 46 32 45.2828 32 44.4V20H24Z" fill="url(#brain-glow)" opacity="0.95" />
+  <path d="M40 20C42.7614 20 45 22.2386 45 25C45 25.4326 44.945 25.8523 44.8419 26.2524C46.6995 27.2429 48 29.2144 48 31.5C48 33.2721 47.2091 34.8587 45.9517 35.9184C46.5958 36.8778 47 38.0267 47 39.2727C47 42.4358 44.4358 45 41.2727 45C40.0518 45 38.9218 44.6183 37.9906 43.9686C36.973 45.2287 35.3774 46 33.6 46C32.7172 46 32 45.2828 32 44.4V20H40Z" fill="url(#brain-glow)" />
+  <circle cx="32" cy="20" r="3" fill="#FBBF24" />
+  <path d="M26 32H38" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" />
+  <path d="M24 38H32" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" />
+  <path d="M32 26H38" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" />
+</svg>

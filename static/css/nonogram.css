@@ -1,0 +1,192 @@
+/* ==========================================================================
+   BrainTrain - Styles Nonogramme (Picross)
+   ========================================================================== */
+
+.nonogram-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  gap: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   Structure de la Grille Nonogramme
+   -------------------------------------------------------------------------- */
+.nonogram-board-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.nonogram-table {
+  display: grid;
+  background-color: #1C1917;
+  border: 2px solid #1C1917;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  user-select: none;
+  touch-action: manipulation;
+  gap: 1px;
+}
+
+/* Zone d'angle (vide) */
+.nono-corner {
+  background-color: var(--bg-subtle);
+  border-bottom: 2px solid #1C1917;
+  border-right: 2px solid #1C1917;
+}
+
+/* En-tête d'indices Colonnes (Haut) */
+.nono-col-header {
+  background-color: var(--bg-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 4px 1px;
+  gap: 2px;
+  border-bottom: 2px solid #1C1917;
+  font-size: clamp(0.6875rem, 2.5vw, 0.8125rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* En-tête d'indices Lignes (Gauche) */
+.nono-row-header {
+  background-color: var(--bg-subtle);
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1px 6px;
+  gap: 4px;
+  border-right: 2px solid #1C1917;
+  font-size: clamp(0.6875rem, 2.5vw, 0.8125rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.nono-clue-num {
+  display: inline-block;
+  min-width: 12px;
+  text-align: center;
+}
+
+.nono-clue-num.completed {
+  color: var(--text-muted);
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+/* Cellules de jeu */
+.nono-cell {
+  background-color: var(--bg-surface);
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: clamp(0.75rem, 3.5vw, 1.125rem);
+  font-weight: 800;
+  transition: background-color 100ms ease, transform 80ms ease;
+  user-select: none;
+}
+
+.nono-cell:hover {
+  background-color: #F5F3FF;
+}
+
+.nono-cell:active {
+  transform: scale(0.92);
+}
+
+/* État : Remplie */
+.nono-cell.filled {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #3730A3 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.15);
+  animation: cellPop 150ms ease-out;
+}
+
+/* État : Croix */
+.nono-cell.crossed {
+  background-color: #FAF8F5;
+  color: var(--accent-coral);
+}
+
+.nono-cell.crossed::after {
+  content: '✕';
+  font-size: clamp(0.75rem, 3.5vw, 1.125rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Lignes épaisses tous les 5 blocs */
+.nono-cell.border-right-thick,
+.nono-col-header.border-right-thick {
+  border-right: 2px solid #1C1917;
+}
+
+.nono-cell.border-bottom-thick,
+.nono-row-header.border-bottom-thick {
+  border-bottom: 2px solid #1C1917;
+}
+
+/* Erreur */
+.nono-cell.error {
+  background-color: #FEE2E2 !important;
+  color: #DC2626 !important;
+}
+
+@keyframes cellPop {
+  0% { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}
+
+/* --------------------------------------------------------------------------
+   Barre de Contrôle des Modes Nonogramme (Remplir / Marquer)
+   -------------------------------------------------------------------------- */
+.nono-mode-bar {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.nono-mode-btn {
+  flex: 1;
+  min-height: 48px;
+  background-color: var(--bg-surface);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.nono-mode-btn.active {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.nono-mode-btn.mode-cross.active {
+  background-color: #1C1917;
+  border-color: #1C1917;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.25);
+}

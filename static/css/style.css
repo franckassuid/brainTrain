@@ -1,0 +1,682 @@
+/* ==========================================================================
+   BrainTrain - Design System & Styles Globaux (Mobile-First)
+   ========================================================================== */
+
+:root {
+  /* Palette de couleurs chaudes et modernes */
+  --bg-primary: #FAF8F5;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F3EFEA;
+  --bg-muted: #EBE5DC;
+  
+  --border-subtle: #E8E2D8;
+  --border-strong: #D5CDC0;
+  
+  --text-primary: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #78716C;
+  --text-on-accent: #FFFFFF;
+  
+  /* Couleurs d'accentuation */
+  --accent-primary: #4F46E5;
+  --accent-primary-hover: #4338CA;
+  --accent-primary-subtle: #EEF2FF;
+  
+  --accent-coral: #E11D48;
+  --accent-coral-subtle: #FFE4E6;
+  
+  --accent-amber: #D97706;
+  --accent-amber-subtle: #FEF3C7;
+  
+  --accent-emerald: #059669;
+  --accent-emerald-subtle: #D1FAE5;
+  
+  --accent-sky: #0284C7;
+  --accent-sky-subtle: #E0F2FE;
+
+  /* Difficultés */
+  --diff-easy-bg: #ECFDF5;
+  --diff-easy-text: #065F46;
+  --diff-medium-bg: #FEF3C7;
+  --diff-medium-text: #92400E;
+  --diff-hard-bg: #FEE2E2;
+  --diff-hard-text: #991B1B;
+
+  /* Typographie & Rayons */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Ombres douces et élégantes */
+  --shadow-sm: 0 1px 3px rgba(28, 25, 23, 0.05);
+  --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.06), 0 1px 2px rgba(28, 25, 23, 0.04);
+  --shadow-lg: 0 10px 25px -3px rgba(28, 25, 23, 0.08), 0 4px 6px -2px rgba(28, 25, 23, 0.04);
+  --shadow-pop: 0 16px 36px -4px rgba(79, 70, 229, 0.22);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Reset & Base
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Conteneur Principal App (Mobile-First Frame)
+   -------------------------------------------------------------------------- */
+#app {
+  width: 100%;
+  max-width: 540px;
+  min-height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--bg-primary);
+}
+
+@media (min-width: 768px) {
+  #app {
+    max-width: 600px;
+    min-height: 96vh;
+    margin: 2vh auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-surface);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Navigation & Vues
+   -------------------------------------------------------------------------- */
+.view {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  padding: 1rem 1.125rem 2rem;
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+.view.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   En-tête de l'application
+   -------------------------------------------------------------------------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0 1.25rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #7C3AED 100%);
+  color: #FFF;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+  font-size: 1.25rem;
+}
+
+.brand-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #1C1917 40%, var(--accent-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-tagline {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Cartes & Sections
+   -------------------------------------------------------------------------- */
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.125rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.625rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* --------------------------------------------------------------------------
+   Bannière Reprendre Partie
+   -------------------------------------------------------------------------- */
+.resume-banner {
+  background: linear-gradient(135deg, #EEF2FF 0%, #FAF5FF 100%);
+  border: 1.5px solid #C7D2FE;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  animation: pulseGlow 3s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1); }
+  100% { box-shadow: 0 4px 16px rgba(79, 70, 229, 0.2); }
+}
+
+.resume-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.resume-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.resume-desc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.btn-resume {
+  background-color: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.875rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.btn-resume:active {
+  transform: scale(0.96);
+}
+
+/* --------------------------------------------------------------------------
+   Sélecteur de Jeu (Cartes Interactives)
+   -------------------------------------------------------------------------- */
+.game-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+  margin-bottom: 1.125rem;
+}
+
+.game-option {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+  position: relative;
+}
+
+.game-option:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.game-option.active {
+  background: var(--accent-primary-subtle);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary), var(--shadow-sm);
+}
+
+.game-option .game-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.game-option .game-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.game-option.active .game-name {
+  color: var(--accent-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Pill Selectors (Temps & Difficulté)
+   -------------------------------------------------------------------------- */
+.pill-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.125rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.pill-btn {
+  flex: 1;
+  min-height: 44px;
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.pill-btn:hover {
+  border-color: var(--border-strong);
+}
+
+.pill-btn.active {
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-sm);
+}
+
+.pill-btn.active.pill-easy {
+  background-color: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+}
+
+.pill-btn.active.pill-medium {
+  background-color: var(--accent-amber);
+  border-color: var(--accent-amber);
+}
+
+.pill-btn.active.pill-hard {
+  background-color: var(--accent-coral);
+  border-color: var(--accent-coral);
+}
+
+/* --------------------------------------------------------------------------
+   Boutons Primaires & Actions
+   -------------------------------------------------------------------------- */
+.cta-container {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.btn-primary {
+  width: 100%;
+  min-height: 52px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #6366F1 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-pop);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  min-height: 44px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-subtle);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.match-counter {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   En-tête de Jeu (Game View Header)
+   -------------------------------------------------------------------------- */
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.875rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.game-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.125rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon:hover {
+  border-color: var(--border-strong);
+  background-color: var(--bg-subtle);
+}
+
+.btn-icon:active {
+  transform: scale(0.94);
+}
+
+.game-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-title {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.badge-difficulty {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  margin-top: 0.125rem;
+}
+
+.badge-facile {
+  background-color: var(--diff-easy-bg);
+  color: var(--diff-easy-text);
+}
+
+.badge-moyen {
+  background-color: var(--diff-medium-bg);
+  color: var(--diff-medium-text);
+}
+
+.badge-difficile {
+  background-color: var(--diff-hard-bg);
+  color: var(--diff-hard-text);
+}
+
+.timer-box {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Modal Popup (Victoire, Abandon, Confirmation)
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(28, 25, 23, 0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  z-index: 1000;
+  animation: fadeIn var(--transition-fast) ease-out;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-card {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 400px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-subtle);
+  animation: scaleUp var(--transition-bounce);
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.modal-title {
+  font-size: 1.375rem;
+  font-weight: 800;
+  margin-bottom: 0.375rem;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+}
+
+.modal-stats {
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.stat-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* --------------------------------------------------------------------------
+   Toast / Notification Flottante
+   -------------------------------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  background-color: var(--text-primary);
+  color: #FFFFFF;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 200ms ease-out forwards;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
