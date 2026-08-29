@@ -182,12 +182,11 @@
 }
 
 /* --------------------------------------------------------------------------
-   Pavé Numérique Tactile (1-9) - Sur plusieurs lignes avec gros boutons
+   Pavé Numérique Tactile (1-9 + Notes) - Grille 5x2 symétrique
    -------------------------------------------------------------------------- */
 .sudoku-keypad {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: clamp(6px, 1.8vw, 10px);
   width: 100%;
   max-width: min(460px, 98vw);
@@ -196,9 +195,7 @@
 }
 
 .keypad-btn {
-  flex: 0 0 calc(20% - 8px);
-  min-width: 48px;
-  max-width: 78px;
+  width: 100%;
   aspect-ratio: 1 / 1.05;
   min-height: 48px;
   padding: 0;
@@ -243,4 +240,24 @@
 .keypad-btn.completed {
   opacity: 0.3;
   pointer-events: none;
+}
+
+/* Bouton Notes intégré dans le pavé numérique */
+.keypad-btn.keypad-btn-note {
+  font-size: clamp(1.1rem, 3.8vw, 1.4rem);
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-strong);
+}
+
+.keypad-btn.keypad-btn-note.active {
+  background-color: var(--accent-primary-subtle);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary), var(--shadow-sm);
+}
+
+.keypad-btn.keypad-btn-note .tool-icon {
+  font-size: clamp(1.125rem, 4vw, 1.45rem);
+  line-height: 1;
 }

@@ -1,0 +1,18 @@
+{
+  "name": "BrainTrain — Entraînement Mental",
+  "short_name": "BrainTrain",
+  "description": "Entraînement cérébral quotidien hors-ligne : Sudoku, Mastermind, Nonogramme, Hashi, Le Compte est bon et Cross Math.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF8F5",
+  "theme_color": "#FAF8F5",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

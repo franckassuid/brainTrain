@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="BrainTrain - Application mobile-first d'entraînement mental quotidien avec Sudoku, Mastermind, Nonogramme, Hashi, Le Compte est bon et Cross Math.">
   <meta name="theme-color" content="#FAF8F5">
-  <title>BrainTrain — Entraînement Mental</title>
+  <!-- PWA Manifest & App Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BrainTrain">
+  <link rel="apple-touch-icon" href="favicon.svg">
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -153,10 +158,6 @@
       <div class="sudoku-container">
         <!-- Barre d'outils au-dessus de la grille -->
         <div class="sudoku-toolbar">
-          <button id="btn-sudoku-notes" class="tool-btn" type="button" title="Mode Crayon">
-            <span class="tool-icon" aria-hidden="true">✏️</span>
-            <span>Notes</span>
-          </button>
           <button id="btn-sudoku-undo" class="tool-btn" type="button" title="Annuler">
             <span class="tool-icon" aria-hidden="true">↩️</span>
             <span>Annuler</span>
@@ -178,7 +179,7 @@
         <!-- Grille Sudoku 9x9 -->
         <div id="sudoku-board-container" class="sudoku-board-wrapper"></div>
 
-        <!-- Pavé numérique en-dessous sur plusieurs lignes -->
+        <!-- Pavé numérique 5x2 avec bouton Notes intégré à côté des chiffres -->
         <div class="sudoku-keypad" role="group" aria-label="Pavé numérique">
           <button class="keypad-btn" data-digit="1" type="button">1<span class="keypad-count">9</span></button>
           <button class="keypad-btn" data-digit="2" type="button">2<span class="keypad-count">9</span></button>
@@ -189,6 +190,10 @@
           <button class="keypad-btn" data-digit="7" type="button">7<span class="keypad-count">9</span></button>
           <button class="keypad-btn" data-digit="8" type="button">8<span class="keypad-count">9</span></button>
           <button class="keypad-btn" data-digit="9" type="button">9<span class="keypad-count">9</span></button>
+          <button id="btn-sudoku-notes" class="keypad-btn keypad-btn-note" type="button" title="Activer / Désactiver le Mode Notes">
+            <span class="tool-icon" aria-hidden="true">✏️</span>
+            <span class="keypad-count">Notes</span>
+          </button>
         </div>
       </div>
     </section>

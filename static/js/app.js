@@ -329,6 +329,32 @@ class BrainTrainApp {
 
     // Custom Modal listener
     window.addEventListener('app:modal', (e) => this.showModal(e.detail));
+
+    // État réseau (En ligne / Hors-ligne)
+    window.addEventListener('offline', () => {
+      this.showToast('⚡ Mode hors-ligne actif (1 100 parties disponibles)');
+    });
+    window.addEventListener('online', () => {
+      this.showToast('🌐 Connexion rétablie');
+      this.updateMatchCount();
+    });
+
+    // Enregistrement du Service Worker PWA
+    this.registerServiceWorker();
+  }
+
+  registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('Service Worker BrainTrain enregistré avec succès:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('Erreur enregistrement Service Worker:', err);
+          });
+      });
+    }
   }
 
   showView(viewName) {
