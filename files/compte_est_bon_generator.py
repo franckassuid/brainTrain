@@ -23,6 +23,7 @@ solution valide existe) :
    difficulté, ou si la combinaison (nombres + cible) a déjà été générée
    (pour éviter des niveaux trop semblables).
 """
+
 from __future__ import annotations
 
 import random
@@ -32,23 +33,32 @@ OP_SYMBOLS = {"+": "+", "-": "−", "*": "×", "/": "÷"}
 MAX_INTERMEDIATE = 999_999  # borne de sécurité contre l'explosion combinatoire
 
 DIFFICULTY_PARAMS = {
+    # NOTE : ces paramètres ont été renforcés (v5) car les niveaux "facile"
+    # générés avec les valeurs précédentes (cible 10-100, 0 grand nombre,
+    # sous-ensemble minimal de 2 nombres) étaient jugés trop simples. Les
+    # 100 niveaux déjà en base avant ce changement gardent leurs anciens
+    # paramètres (jamais régénérés) ; seuls les niveaux ajoutés à partir de
+    # maintenant utilisent ces valeurs plus exigeantes.
     "facile": {
         "count": 4,
-        "large_count_choices": [0],
-        "large_count_weights": [1],
-        "target_range": (10, 100),
+        "large_count_choices": [0, 1],
+        "large_count_weights": [70, 30],   # avant : jamais de grand nombre
+        "target_range": (30, 150),          # avant : (10, 100)
+        "min_subset_size": 3,               # avant : 2 (empêche les solutions à 2 nombres)
     },
     "moyen": {
         "count": 5,
         "large_count_choices": [0, 1, 2],
-        "large_count_weights": [50, 40, 10],
-        "target_range": (100, 500),
+        "large_count_weights": [30, 50, 20],  # avant : [50, 40, 10]
+        "target_range": (150, 600),           # avant : (100, 500)
+        "min_subset_size": 4,                 # avant : 2
     },
     "difficile": {
         "count": 6,
-        "large_count_choices": [0, 1, 2, 3],
-        "large_count_weights": [15, 45, 30, 10],
-        "target_range": (200, 999),
+        "large_count_choices": [1, 2, 3],      # avant : [0, 1, 2, 3] — toujours >=1 grand nombre
+        "large_count_weights": [30, 45, 25],
+        "target_range": (400, 999),            # avant : (200, 999)
+        "min_subset_size": 5,                  # avant : 2 — quasi obligation d'utiliser presque tous les nombres
     },
 }
 
@@ -209,7 +219,7 @@ def generate_compte_est_bon_puzzle(difficulty: str, max_attempts: int = 300) -> 
 
         # sous-ensemble utilisé : une partie ou la totalité des nombres,
         # en favorisant l'utilisation de la plupart d'entre eux
-        min_subset = min(2, len(numbers))
+        min_subset = min(params.get("min_subset_size", 2), len(numbers))
         k = rng.choices(
             range(min_subset, len(numbers) + 1),
             weights=[1 if s < len(numbers) else 3 for s in range(min_subset, len(numbers) + 1)],

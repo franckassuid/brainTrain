@@ -90,7 +90,7 @@ class TestDatabaseQueries(unittest.TestCase):
 
     def test_get_games_total_counts(self):
         all_games = query.get_games(conn=self.conn)
-        self.assertEqual(len(all_games), 500)
+        self.assertEqual(len(all_games), 1100)
 
 
 if __name__ == "__main__":

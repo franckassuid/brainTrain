@@ -47,6 +47,7 @@ Compte est bon : on construit la SOLUTION d'abord) :
 5. On vérifie enfin que le niveau n'est pas un simple doublon (par
    transposition) d'un niveau déjà généré dans ce lot.
 """
+
 from __future__ import annotations
 
 import random
@@ -57,29 +58,35 @@ OP_SYMBOLS = {"+": "+", "-": "−", "*": "×", "/": "÷"}  # symboles d'affichag
 MAX_VALUE = 20_000  # borne de sécurité contre l'explosion combinatoire
 
 DIFFICULTY_PARAMS = {
+    # NOTE : ces paramètres ont été renforcés (v5) car les niveaux "facile"
+    # générés avec les valeurs précédentes (seulement + et −, 60% des cases
+    # pré-remplies) étaient jugés trop simples. Les 20 niveaux déjà en base
+    # par difficulté avant ce changement gardent leurs anciens paramètres
+    # (jamais régénérés) ; seuls les niveaux ajoutés à partir de maintenant
+    # utilisent ces valeurs plus exigeantes.
     "facile": {
         "grid_size": 3,
-        "number_range": (1, 9),
-        "allowed_operators": ["+", "-"],
-        "given_fraction": 0.6,   # part de cases pré-remplies
-        "min_mult_or_div": 0,    # pas de x/÷ exigé
+        "number_range": (1, 12),                # avant : (1, 9)
+        "allowed_operators": ["+", "-", "*"],   # avant : ["+", "-"] — ajout de ×
+        "given_fraction": 0.45,                  # avant : 0.6 — moins de cases pré-remplies
+        "min_mult_or_div": 1,                    # avant : 0 — au moins une × imposée
         "min_div": 0,
     },
     "moyen": {
         "grid_size": 4,
         "number_range": (1, 9),
         "allowed_operators": ["+", "-", "*", "/"],
-        "given_fraction": 0.4,
-        "min_mult_or_div": 2,    # au moins 2 occurrences de × ou ÷
-        "min_div": 1,            # au moins 1 division
+        "given_fraction": 0.3,    # avant : 0.4
+        "min_mult_or_div": 3,     # avant : 2
+        "min_div": 1,
     },
     "difficile": {
         "grid_size": 4,
         "number_range": (1, 12),
         "allowed_operators": ["+", "-", "*", "/"],
-        "given_fraction": 0.15,
-        "min_mult_or_div": 4,
-        "min_div": 2,
+        "given_fraction": 0.10,   # avant : 0.15
+        "min_mult_or_div": 5,     # avant : 4
+        "min_div": 3,             # avant : 2
     },
 }
 

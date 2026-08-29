@@ -30,12 +30,12 @@ Vérifie :
 Usage :
     python test_data.py
 """
+
 from __future__ import annotations
 
 import json
 import sys
 from collections import Counter
-from pathlib import Path
 
 from db import get_connection
 from sudoku_generator import (
@@ -70,8 +70,8 @@ NONOGRAM_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 HASHI_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 COMPTE_EST_BON_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
 CROSS_MATH_DURATIONS = {"facile": 5, "moyen": 10, "difficile": 20}
-EXPECTED_DISTRIBUTION = {"facile": 20, "moyen": 20, "difficile": 10}
-COMPTE_EST_BON_EXPECTED_DISTRIBUTION = {"facile": 100, "moyen": 100, "difficile": 50}
+EXPECTED_DISTRIBUTION = {"facile": 50, "moyen": 50, "difficile": 50}  # 150 (50 initiaux + 100 ajoutés)
+COMPTE_EST_BON_EXPECTED_DISTRIBUTION = {"facile": 130, "moyen": 130, "difficile": 90}  # 350
 
 
 failures = []
@@ -89,7 +89,7 @@ def test_sudoku(conn) -> None:
     print("\n--- Sudoku ---")
     rows = conn.execute("SELECT * FROM sudoku_puzzles").fetchall()
 
-    check(len(rows) == 50, f"50 grilles au total (trouvé {len(rows)})")
+    check(len(rows) == 150, f"150 grilles au total (trouvé {len(rows)})")
 
     counts = {"facile": 0, "moyen": 0, "difficile": 0}
     starting_grids_seen = set()
@@ -128,9 +128,9 @@ def test_sudoku(conn) -> None:
 
         starting_grids_seen.add(row["starting_grid"])
 
-    check(counts["facile"] == 20, f"20 grilles faciles (trouvé {counts['facile']})")
-    check(counts["moyen"] == 20, f"20 grilles moyennes (trouvé {counts['moyen']})")
-    check(counts["difficile"] == 10, f"10 grilles difficiles (trouvé {counts['difficile']})")
+    check(counts["facile"] == 50, f"50 grilles faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 50, f"50 grilles moyennes (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 50, f"50 grilles difficiles (trouvé {counts['difficile']})")
     check(len(starting_grids_seen) == len(rows), "toutes les grilles de départ sont différentes")
     check(
         all(string_to_grid(r["solution_grid"]) and True for r in rows),
@@ -143,7 +143,7 @@ def test_mastermind(conn) -> None:
     print("\n--- Mastermind ---")
     rows = conn.execute("SELECT * FROM mastermind_games").fetchall()
 
-    check(len(rows) == 50, f"50 parties au total (trouvé {len(rows)})")
+    check(len(rows) == 150, f"150 parties au total (trouvé {len(rows)})")
 
     counts = {"facile": 0, "moyen": 0, "difficile": 0}
     codes_seen_by_difficulty = {"facile": set(), "moyen": set(), "difficile": set()}
@@ -174,9 +174,9 @@ def test_mastermind(conn) -> None:
 
         codes_seen_by_difficulty[difficulty].add(row["secret_code"])
 
-    check(counts["facile"] == 20, f"20 parties faciles (trouvé {counts['facile']})")
-    check(counts["moyen"] == 20, f"20 parties moyennes (trouvé {counts['moyen']})")
-    check(counts["difficile"] == 10, f"10 parties difficiles (trouvé {counts['difficile']})")
+    check(counts["facile"] == 50, f"50 parties faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 50, f"50 parties moyennes (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 50, f"50 parties difficiles (trouvé {counts['difficile']})")
 
     for difficulty, codes in codes_seen_by_difficulty.items():
         expected = EXPECTED_DISTRIBUTION[difficulty]
@@ -202,7 +202,7 @@ def test_nonogram(conn) -> None:
     print("\n--- Nonogramme ---")
     rows = conn.execute("SELECT * FROM nonogram_puzzles").fetchall()
 
-    check(len(rows) == 50, f"50 grilles au total (trouvé {len(rows)})")
+    check(len(rows) == 150, f"150 grilles au total (trouvé {len(rows)})")
 
     counts = {"facile": 0, "moyen": 0, "difficile": 0}
     solutions_seen = set()
@@ -251,9 +251,9 @@ def test_nonogram(conn) -> None:
 
         solutions_seen.add(row["solution_grid"])
 
-    check(counts["facile"] == 20, f"20 grilles faciles (trouvé {counts['facile']})")
-    check(counts["moyen"] == 20, f"20 grilles moyennes (trouvé {counts['moyen']})")
-    check(counts["difficile"] == 10, f"10 grilles difficiles (trouvé {counts['difficile']})")
+    check(counts["facile"] == 50, f"50 grilles faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 50, f"50 grilles moyennes (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 50, f"50 grilles difficiles (trouvé {counts['difficile']})")
     check(len(solutions_seen) == len(rows), "toutes les grilles solutions sont différentes")
     check(
         unverified_count == 0,
@@ -273,7 +273,7 @@ def test_hashi(conn) -> None:
     print("\n--- Hashi (Ponts) ---")
     rows = conn.execute("SELECT * FROM hashi_puzzles").fetchall()
 
-    check(len(rows) == 50, f"50 puzzles au total (trouvé {len(rows)})")
+    check(len(rows) == 150, f"150 puzzles au total (trouvé {len(rows)})")
 
     counts = {"facile": 0, "moyen": 0, "difficile": 0}
     checked_count = 0
@@ -326,9 +326,9 @@ def test_hashi(conn) -> None:
         if row["estimated_duration_minutes"] != HASHI_DURATIONS[difficulty]:
             failures.append(f"id={row['id']} : durée incohérente pour {difficulty}")
 
-    check(counts["facile"] == 20, f"20 puzzles faciles (trouvé {counts['facile']})")
-    check(counts["moyen"] == 20, f"20 puzzles moyens (trouvé {counts['moyen']})")
-    check(counts["difficile"] == 10, f"10 puzzles difficiles (trouvé {counts['difficile']})")
+    check(counts["facile"] == 50, f"50 puzzles faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 50, f"50 puzzles moyens (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 50, f"50 puzzles difficiles (trouvé {counts['difficile']})")
     print(
         f"  (solution validée règle par règle pour les {len(rows)} puzzles ; "
         f"unicité confirmée pour {unique_count}, non vérifiée pour {checked_count} "
@@ -340,7 +340,7 @@ def test_compte_est_bon(conn) -> None:
     print("\n--- Le Compte est bon ---")
     rows = conn.execute("SELECT * FROM compte_est_bon_puzzles").fetchall()
 
-    check(len(rows) == 250, f"250 niveaux au total (trouvé {len(rows)})")
+    check(len(rows) == 350, f"350 niveaux au total (trouvé {len(rows)})")
 
     counts = {"facile": 0, "moyen": 0, "difficile": 0}
     expected_count_by_diff = {"facile": 4, "moyen": 5, "difficile": 6}
@@ -391,9 +391,9 @@ def test_compte_est_bon(conn) -> None:
 
         combos_seen.add((tuple(sorted(numbers)), target))
 
-    check(counts["facile"] == 100, f"100 niveaux faciles (trouvé {counts['facile']})")
-    check(counts["moyen"] == 100, f"100 niveaux moyens (trouvé {counts['moyen']})")
-    check(counts["difficile"] == 50, f"50 niveaux difficiles (trouvé {counts['difficile']})")
+    check(counts["facile"] == 130, f"130 niveaux faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 130, f"130 niveaux moyens (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 90, f"90 niveaux difficiles (trouvé {counts['difficile']})")
     check(invalid_solutions == 0, f"toutes les solutions atteignent la cible sans erreur ({invalid_solutions} invalide(s))")
     check(
         len(combos_seen) == len(rows),
@@ -409,7 +409,7 @@ def test_cross_math(conn) -> None:
     print("\n--- Cross Math ---")
     rows = conn.execute("SELECT * FROM cross_math_puzzles").fetchall()
 
-    check(len(rows) == 50, f"50 niveaux au total (trouvé {len(rows)})")
+    check(len(rows) == 150, f"150 niveaux au total (trouvé {len(rows)})")
 
     counts = {"facile": 0, "moyen": 0, "difficile": 0}
     invalid_solution_count = 0
@@ -524,9 +524,9 @@ def test_cross_math(conn) -> None:
              tuple(tuple(o) for o in col_operators), tuple(row_results), tuple(col_results))
         )
 
-    check(counts["facile"] == 20, f"20 niveaux faciles (trouvé {counts['facile']})")
-    check(counts["moyen"] == 20, f"20 niveaux moyens (trouvé {counts['moyen']})")
-    check(counts["difficile"] == 10, f"10 niveaux difficiles (trouvé {counts['difficile']})")
+    check(counts["facile"] == 50, f"50 niveaux faciles (trouvé {counts['facile']})")
+    check(counts["moyen"] == 50, f"50 niveaux moyens (trouvé {counts['moyen']})")
+    check(counts["difficile"] == 50, f"50 niveaux difficiles (trouvé {counts['difficile']})")
     check(invalid_solution_count == 0, f"toutes les solutions stockées sont mathématiquement valides ({invalid_solution_count} invalide(s))")
     check(bad_division_count == 0, f"aucune division décimale ou par zéro détectée ({bad_division_count} trouvée(s))")
     check(non_unique_count == 0, f"toutes les solutions sont confirmées uniques ({non_unique_count} problème(s))")
@@ -546,40 +546,34 @@ def test_cross_math(conn) -> None:
     )
 
 
-def test_other_games_untouched_by_cross_math(conn) -> None:
+def test_no_destructive_operations(conn) -> None:
     """
-    Vérifie explicitement que l'ajout de Cross Math n'a modifié aucune
-    donnée des autres types de jeux : le nombre de lignes de chaque table
-    correspond exactement à ce qui existait avant l'ajout de Cross Math.
+    Garde-fou structurel, valable pour toutes les évolutions futures de la
+    base : les scripts qui peuplent ou complètent la base de données ne
+    doivent jamais contenir d'instruction destructive (DELETE/DROP) visant
+    les niveaux déjà stockés. Cette vérification est volontairement
+    indépendante de tout nombre de lignes précis (qui évolue à chaque
+    ajout de niveaux) — elle porte sur le CODE SOURCE des scripts eux-mêmes.
 
-    Remarque : on ne suppose PAS que les identifiants sont contigus à
-    partir de 1, car ces tables ont pu être régénérées lors de sessions
-    de développement précédentes (avant l'ajout de Cross Math) — seul le
-    nombre de lignes (et, en pratique, leur contenu — vérifié manuellement
-    par empreinte MD5 avant/après l'ajout de Cross Math, voir README.md)
-    doit rester strictement identique désormais que `generate_data.py`
-    n'écrit plus jamais dans une table déjà peuplée (voir sa docstring).
+    Complète les vérifications dynamiques déjà faites par ailleurs (via
+    empreintes MD5 comparées manuellement avant/après chaque ajout de
+    niveaux, documentées dans README.md).
     """
-    print("\n--- Non-régression : les autres jeux n'ont pas été modifiés ---")
+    print("\n--- Non-régression structurelle : aucune opération destructive ---")
 
-    tables_and_expected_counts = [
-        ("sudoku_puzzles", 50),
-        ("mastermind_games", 50),
-        ("nonogram_puzzles", 50),
-        ("hashi_puzzles", 50),
-        ("compte_est_bon_puzzles", 250),
-    ]
-    for table, expected_count in tables_and_expected_counts:
-        count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        check(count == expected_count, f"{table} : {expected_count} lignes toujours présentes (trouvé {count})")
+    import glob
 
-    generate_data_path = Path(__file__).parent / "generate_data.py"
-    with open(generate_data_path, "r", encoding="utf-8") as f:
-        source = f.read()
-    check(
-        "DELETE FROM" not in source and "DROP TABLE" not in source,
-        "generate_data.py ne contient aucune instruction DELETE/DROP (purement additif)",
-    )
+    scripts_to_check = ["generate_data.py"] + glob.glob("add_*.py")
+    for script in scripts_to_check:
+        try:
+            with open(script, "r", encoding="utf-8") as f:
+                source = f.read()
+        except FileNotFoundError:
+            continue
+        check(
+            "DELETE FROM" not in source and "DROP TABLE" not in source,
+            f"{script} ne contient aucune instruction DELETE/DROP (purement additif)",
+        )
 
 
 def test_query_function(conn) -> None:
@@ -587,11 +581,11 @@ def test_query_function(conn) -> None:
     from query import get_games, get_random_game, VALID_TYPES
 
     all_games = get_games(conn=conn)
-    check(len(all_games) == 500, f"500 jeux au total via get_games() (trouvé {len(all_games)})")
+    check(len(all_games) == 1100, f"1100 jeux au total via get_games() (trouvé {len(all_games)})")
 
     for game_type, expected in [
-        ("sudoku", 50), ("mastermind", 50), ("nonogram", 50), ("hashi", 50),
-        ("compte_est_bon", 250), ("cross_math", 50),
+        ("sudoku", 150), ("mastermind", 150), ("nonogram", 150), ("hashi", 150),
+        ("compte_est_bon", 350), ("cross_math", 150),
     ]:
         results = get_games(game_type=game_type, conn=conn)
         check(
@@ -604,8 +598,8 @@ def test_query_function(conn) -> None:
         )
 
     easy_only = get_games(difficulty="facile", conn=conn)
-    # 20 (sudoku) + 20 (mastermind) + 20 (nonogram) + 20 (hashi) + 100 (compte_est_bon) + 20 (cross_math) = 200
-    check(len(easy_only) == 200, f"get_games(difficulty='facile') renvoie 200 résultats (trouvé {len(easy_only)})")
+    # 50 (sudoku) + 50 (mastermind) + 50 (nonogram) + 50 (hashi) + 130 (compte_est_bon) + 50 (cross_math) = 380
+    check(len(easy_only) == 380, f"get_games(difficulty='facile') renvoie 380 résultats (trouvé {len(easy_only)})")
 
     short_games = get_games(max_duration=5, conn=conn)
     check(
@@ -614,19 +608,19 @@ def test_query_function(conn) -> None:
     )
 
     combo = get_games(game_type="mastermind", difficulty="difficile", max_duration=15, conn=conn)
-    check(len(combo) == 10, "combinaison type+difficulté+durée renvoie les 10 mastermind difficiles")
+    check(len(combo) == 50, "combinaison type+difficulté+durée renvoie les 50 mastermind difficiles")
 
     nonogram_combo = get_games(game_type="nonogram", difficulty="difficile", max_duration=20, conn=conn)
-    check(len(nonogram_combo) == 10, "combinaison type+difficulté+durée renvoie les 10 nonogrammes difficiles")
+    check(len(nonogram_combo) == 50, "combinaison type+difficulté+durée renvoie les 50 nonogrammes difficiles")
 
     hashi_combo = get_games(game_type="hashi", difficulty="facile", conn=conn)
-    check(len(hashi_combo) == 20, "get_games(game_type='hashi', difficulty='facile') renvoie 20 résultats")
+    check(len(hashi_combo) == 50, "get_games(game_type='hashi', difficulty='facile') renvoie 50 résultats")
 
     compte_combo = get_games(game_type="compte_est_bon", difficulty="difficile", conn=conn)
-    check(len(compte_combo) == 50, "get_games(game_type='compte_est_bon', difficulty='difficile') renvoie 50 résultats")
+    check(len(compte_combo) == 90, "get_games(game_type='compte_est_bon', difficulty='difficile') renvoie 90 résultats")
 
     cross_math_combo = get_games(game_type="cross_math", difficulty="difficile", conn=conn)
-    check(len(cross_math_combo) == 10, "get_games(game_type='cross_math', difficulty='difficile') renvoie 10 résultats")
+    check(len(cross_math_combo) == 50, "get_games(game_type='cross_math', difficulty='difficile') renvoie 50 résultats")
 
     random_game = get_random_game(game_type="sudoku", conn=conn)
     check(random_game is not None and random_game["type"] == "sudoku", "get_random_game() renvoie un jeu du bon type")
@@ -696,18 +690,18 @@ def test_balanced_random_selection(conn) -> None:
 
     check(
         all_balanced,
-        "chaque type de jeu est tiré avec une probabilité ≈ égale, malgré 250 niveaux "
-        "pour 'compte_est_bon' contre 50 pour les autres types (dont le nouveau 'cross_math')",
+        "chaque type de jeu est tiré avec une probabilité ≈ égale, malgré 350 niveaux "
+        "pour 'compte_est_bon' contre 150 pour les autres types",
     )
 
-    # Le Compte est bon représente 250/500 = 50% des LIGNES de la base : si le
-    # tirage était uniforme sur l'ensemble des lignes (bug), il apparaîtrait
-    # environ 50% du temps au lieu de ≈ 16.7% (1/6). On vérifie explicitement
-    # que ce biais n'est PAS présent.
-    naive_uniform_share = 250 / 500
+    # Le Compte est bon représente 350/1100 ≈ 32% des LIGNES de la base : si
+    # le tirage était uniforme sur l'ensemble des lignes (bug), il serait
+    # nettement sur-représenté par rapport à ≈ 16.7% (1/6). On vérifie
+    # explicitement que ce biais n'est PAS présent.
+    naive_uniform_share = 350 / 1100
     observed_compte_share = tally["compte_est_bon"] / n_samples
     check(
-        abs(observed_compte_share - naive_uniform_share) > 0.15,
+        abs(observed_compte_share - naive_uniform_share) > 0.10,
         f"'compte_est_bon' n'est PAS sur-représenté comme le serait un tirage "
         f"uniforme sur les lignes ({observed_compte_share:.1%} observé vs "
         f"{naive_uniform_share:.1%} qu'un tirage naïf donnerait)",
@@ -748,7 +742,7 @@ def main() -> None:
     test_hashi(conn)
     test_compte_est_bon(conn)
     test_cross_math(conn)
-    test_other_games_untouched_by_cross_math(conn)
+    test_no_destructive_operations(conn)
     test_query_function(conn)
     test_balanced_random_selection(conn)
     conn.close()

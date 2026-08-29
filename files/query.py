@@ -20,6 +20,7 @@ tirage se fait en DEUX ÉTAPES :
 Chaque type de jeu compatible garde ainsi la même probabilité d'être
 proposé, quel que soit son nombre de niveaux en base.
 """
+
 from __future__ import annotations
 
 import json

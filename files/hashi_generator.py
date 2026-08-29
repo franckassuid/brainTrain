@@ -34,6 +34,7 @@ et difficiles, seule la VALIDITÉ de la solution stockée est garantie
 mais l'unicité n'est pas prouvée. Le champ `solution_unique` en base
 reflète honnêtement ce qui a été vérifié.
 """
+
 from __future__ import annotations
 
 import random

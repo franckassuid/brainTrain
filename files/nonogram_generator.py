@@ -16,6 +16,7 @@ Représentation d'une ligne/colonne : liste d'entiers (longueurs des blocs
 de cases remplies, dans l'ordre), liste vide [] si la ligne est entièrement
 vide.
 """
+
 from __future__ import annotations
 
 import random

@@ -10,6 +10,8 @@ Principe :
    ou quand on ne peut plus retirer de case sans casser l'unicité.
 """
 
+from __future__ import annotations
+
 import random
 
 GRID_SIZE = 9

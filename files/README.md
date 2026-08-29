@@ -1,23 +1,26 @@
-# Base de données — Application d'entraînement mental (v1 + v2 + v3 + v4)
+# Base de données — Application d'entraînement mental (v1 → v5)
 
-Base SQLite locale contenant 500 parties prêtes à jouer : 50 grilles de
-Sudoku, 50 parties de Mastermind, 50 Nonogrammes, 50 puzzles Hashi
-(Ponts), 250 niveaux du Compte est bon et 50 niveaux Cross Math. Aucune
-interface n'est incluse à ce stade : uniquement la base, les données, un
-script de génération et des tests de validation.
+Base SQLite locale contenant 1100 parties prêtes à jouer : 150 grilles de
+Sudoku, 150 parties de Mastermind, 150 Nonogrammes, 150 puzzles Hashi
+(Ponts), 350 niveaux du Compte est bon et 150 niveaux Cross Math. Aucune
+interface n'est incluse à ce stade : uniquement la base, les données, les
+scripts de génération et des tests de validation.
 
 > **v2** : ajout des Nonogrammes et du Hashi.
 > **v3** : ajout du Compte est bon (250 niveaux) + refonte du tirage
 > aléatoire "sans type précisé" pour qu'il reste équilibré entre les
 > types malgré leurs effectifs très différents.
 > **v4** : ajout de Cross Math (50 niveaux) + `generate_data.py` devient
-> **purement additif pour tous les types sans exception** (voir
-> "Extensions" plus bas) — c'est la garantie la plus forte apportée par
-> cette version : plus aucune table n'est jamais vidée/régénérée par le
-> script, quel que soit le type de jeu.
+> **purement additif pour tous les types sans exception** — plus aucune
+> table n'est jamais vidée/régénérée par le script, quel que soit le type.
+> **v5** : ajout de 100 niveaux par type (30 faciles / 30 moyens /
+> 40 difficiles) via le nouveau script `add_extra_levels.py`, et
+> renforcement des paramètres de difficulté du Compte est bon et de
+> Cross Math (leurs niveaux faciles étaient jugés trop simples) — voir
+> "Extensions" et "Difficulté renforcée" plus bas.
 >
 > Dans toutes les versions, les jeux déjà présents en base ne sont ni
-> supprimés ni régénérés par le script.
+> supprimés ni régénérés par les scripts.
 
 ## Fichiers
 
@@ -31,10 +34,12 @@ script de génération et des tests de validation.
 | `hashi_generator.py`           | Génération d'îles + ponts, avec **validation robuste des règles** et unicité best-effort |
 | `compte_est_bon_generator.py`  | Génération de niveaux + solution construite en même temps, avec **rejeu et vérification complète de la solution** |
 | `cross_math_generator.py`      | Génération de grilles + opérateurs, avec **solveur d'unicité par permutation** et **validateur de proposition joueur** |
-| `generate_data.py`             | Script de remplissage : génère et insère les 500 parties — **purement additif**, aucune table jamais vidée |
+| `generate_data.py`             | Peuplement initial : génère et insère les niveaux de départ pour chaque type — **purement additif**, ne génère que si la table est vide |
+| `add_extra_levels.py`          | Ajoute 100 niveaux supplémentaires par type (30/30/40) — **purement additif**, amorce sa déduplication depuis le contenu déjà en base |
 | `query.py`                     | `get_games()` / `get_random_game()` — filtrage par type (6) / difficulté / durée, **tirage équilibré en 2 étapes** |
 | `test_data.py`                 | Tests de validation (comptes, cohérence, unicité, règles de chaque jeu, non-régression, équilibre du tirage) |
-| `mental_training.db`           | Base SQLite générée (résultat de `generate_data.py`)                 |
+| `mental_training.db`           | Base SQLite générée (résultat de `generate_data.py` + `add_extra_levels.py`) |
+
 
 ## Modèle de données
 
@@ -97,17 +102,20 @@ Paramètres Hashi par difficulté :
 - `solution_readable` (TEXT, la même solution en clair, une ligne par étape)
 - `difficulty` / `estimated_duration_minutes`
 
-Paramètres par difficulté :
+Paramètres par difficulté (niveaux ajoutés à partir de la v5 — voir
+"Difficulté renforcée (v5)" plus bas pour les niveaux plus anciens) :
 
-| Difficulté | Nombres | Cible        | Durée   |
-|------------|---------|--------------|---------|
-| facile     | 4       | 10 à 100     | 5 min   |
-| moyen      | 5       | 100 à 500    | 10 min  |
-| difficile  | 6       | 200 à 999    | 20 min  |
+| Difficulté | Nombres | Cible        | Sous-ensemble min. | Durée   |
+|------------|---------|--------------|---------------------|---------|
+| facile     | 4       | 30 à 150     | 3 nombres           | 5 min   |
+| moyen      | 5       | 150 à 600    | 4 nombres           | 10 min  |
+| difficile  | 6       | 400 à 999    | 5 nombres           | 20 min  |
 
-Le jeu de nombres disponibles mélange des "petits" nombres (1 à 10) et,
-à partir du niveau moyen, des "grands" nombres (25, 50, 75, 100, chacun
-utilisé au plus une fois par niveau) — comme au jeu télévisé.
+Le jeu de nombres disponibles mélange des "petits" nombres (1 à 10) et
+des "grands" nombres (25, 50, 75, 100, chacun utilisé au plus une fois
+par niveau) — comme au jeu télévisé. Depuis la v5, un grand nombre peut
+apparaître dès le niveau facile (30 % de chance), et les niveaux
+difficiles en contiennent toujours au moins un.
 
 ### `cross_math_puzzles`
 - `grid_size` (k : nombre de nombres par ligne/colonne — grille k × k)
@@ -128,13 +136,13 @@ priorité opératoire implicite** — pour 3 nombres et 2 opérateurs,
 doit être exacte et produire un résultat strictement positif ; aucun
 résultat intermédiaire ne peut être négatif.
 
-Paramètres par difficulté :
+Paramètres par difficulté (niveaux ajoutés à partir de la v5) :
 
 | Difficulté | Grille | Opérateurs autorisés | Cases pré-remplies | Durée   |
 |------------|--------|-----------------------|---------------------|---------|
-| facile     | 3 × 3  | + −                   | ~60 % (5/9)         | 5 min   |
-| moyen      | 4 × 4  | + − × ÷ (≥2 occ. ×/÷) | ~40 % (6-7/16)      | 10 min  |
-| difficile  | 4 × 4  | + − × ÷ (≥4 occ. ×/÷, ≥2 ÷) | ~15 % (2-3/16) | 20 min  |
+| facile     | 3 × 3  | + − × (≥1 occ. ×)     | ~45 % (4/9)         | 5 min   |
+| moyen      | 4 × 4  | + − × ÷ (≥3 occ. ×/÷, ≥1 ÷) | ~30 % (5/16)  | 10 min  |
+| difficile  | 4 × 4  | + − × ÷ (≥5 occ. ×/÷, ≥3 ÷) | ~10 % (1-2/16)| 20 min  |
 
 ## Comment ça marche
 
@@ -201,10 +209,10 @@ Paramètres par difficulté :
 ## Tirage aléatoire équilibré entre les types de jeux
 
 **Problème** : les types de jeux n'ont pas le même nombre de niveaux en
-base (250 pour le Compte est bon contre 50 pour les 5 autres types). Un
+base (350 pour le Compte est bon contre 150 pour les 5 autres types). Un
 tirage aléatoire *uniforme sur l'ensemble des lignes* de la base
-favoriserait donc mécaniquement le Compte est bon : avec 250 lignes sur
-500, il apparaîtrait environ 50 % du temps au lieu du ≈ 17 % attendu
+favoriserait donc mécaniquement le Compte est bon : avec 350 lignes sur
+1100, il apparaîtrait environ 32 % du temps au lieu du ≈ 17 % attendu
 pour 6 types équiprobables.
 
 **Solution** : `get_random_game()` (dans `query.py`) applique un tirage
@@ -226,68 +234,113 @@ uniforme parmi les jeux de ce type (comportement inchangé).
 Ce comportement est vérifié dans `test_data.py::test_balanced_random_selection`,
 qui échantillonne plusieurs milliers de tirages et vérifie que chaque
 type représente bien environ 17 % des résultats (± 6 %), y compris
-lorsqu'un filtre de difficulté est appliqué. L'ajout de Cross Math n'a
-nécessité **aucune modification** de cette logique : comme elle itère
-déjà sur le registre `TYPE_FETCHERS`, il a suffi d'y enregistrer le
-nouveau type pour qu'il soit automatiquement pris en compte dans le
-tirage équilibré.
+lorsqu'un filtre de difficulté est appliqué. Ce mécanisme n'a nécessité
+**aucune modification** lors de l'ajout de Cross Math (v4) ni lors de
+l'ajout des 600 niveaux supplémentaires (v5) : comme il itère déjà sur
+le registre `TYPE_FETCHERS` et interroge le nombre RÉEL de niveaux par
+type à chaque appel, il reste équilibré automatiquement quel que soit le
+nombre de niveaux de chaque type.
 
-## Extensions purement additives (`generate_data.py`)
+## Extensions purement additives (`generate_data.py` et `add_extra_levels.py`)
 
-Depuis la v4 (ajout de Cross Math), `generate_data.py` suit une règle
-unique et sans exception pour **tous** les types de jeux : un niveau
-n'est généré et inséré QUE si sa table est actuellement vide. Aucune
-instruction `DELETE` ni `DROP` ne figure dans ce script (vérifié
-explicitement par `test_data.py::test_other_games_untouched_by_cross_math`).
-Concrètement, réexécuter `python generate_data.py` sur une base déjà
-peuplée n'a aucun effet — chaque type affiche simplement
-"déjà présents en base, conservés tels quels". C'est ce qui garantit que
-l'ajout d'un nouveau type de jeu (comme Cross Math) ne modifie jamais les
-niveaux des types déjà existants.
+Deux scripts peuplent la base, tous deux strictement additifs (aucune
+instruction `DELETE` ni `DROP`, vérifié par
+`test_data.py::test_no_destructive_operations`) :
+
+- **`generate_data.py`** : peuplement initial. Pour chaque type, un
+  niveau n'est généré QUE si sa table est actuellement vide. Réexécuter
+  `python generate_data.py` sur une base déjà peuplée n'a aucun effet —
+  chaque type affiche "déjà présents en base, conservés tels quels".
+- **`add_extra_levels.py`** : ajoute 100 niveaux supplémentaires par
+  type (30 faciles / 30 moyens / 40 difficiles), quel que soit le nombre
+  de niveaux déjà présents. Contrairement à `generate_data.py`, ce
+  script n'est PAS idempotent par conception : chaque exécution ajoute
+  100 niveaux de plus par type (à lancer donc uniquement quand on veut
+  réellement agrandir la base). Il amorce sa déduplication (grilles/codes/
+  combinaisons déjà vus) en lisant le contenu déjà en base, afin d'éviter
+  tout doublon avec les niveaux existants — pas seulement entre les
+  nouveaux niveaux entre eux.
+
+Dans les deux cas, les niveaux déjà présents ne sont jamais modifiés :
+vérifié par comparaison d'empreintes MD5 du contenu de chaque table
+avant/après exécution (toutes identiques pour les lignes déjà présentes).
+
+## Difficulté renforcée (v5) — Compte est bon et Cross Math
+
+Les niveaux "facile" de ces deux jeux, générés avec les paramètres
+d'origine (v3/v4), ont été jugés trop simples. Les paramètres de
+difficulté de `compte_est_bon_generator.py` et `cross_math_generator.py`
+ont donc été renforcés avant l'exécution de `add_extra_levels.py` (voir
+les tableaux de paramètres dans "Modèle de données" ci-dessus pour le
+détail). Point important : **les niveaux déjà en base gardent leurs
+anciens paramètres, plus faciles** — cohérent avec la règle "jamais de
+régénération des niveaux existants" appliquée à toute la base. Concrètement :
+
+- les 100 premiers niveaux "facile" du Compte est bon (cible 10-100,
+  jamais de grand nombre) et les 20 premiers niveaux "facile" de Cross
+  Math (seulement + et −, 60 % de cases pré-remplies) restent tels quels ;
+- les 30 niveaux "facile" ajoutés en v5 pour chacun de ces deux jeux
+  utilisent les paramètres renforcés (cible 30-150 avec grands nombres
+  possibles pour le Compte est bon ; multiplication + moins de cases
+  pré-remplies pour Cross Math).
+
+Un même niveau de difficulté ("facile", "moyen" ou "difficile") peut donc
+regrouper des niveaux d'exigence légèrement différente selon leur date de
+génération — c'est un compromis assumé pour ne jamais toucher aux
+niveaux existants. Une régénération complète de ces deux tables (avec
+suppression des anciens niveaux) resterait possible mais n'a pas été
+effectuée ici, car elle est destructive et nécessiterait une demande
+explicite.
 
 ## Limites techniques documentées
 
 - **Nonogramme** : la vérification d'unicité est systématique et rapide
   pour les tailles utilisées ici (5×5, 8×8, 10×10 — quelques millisecondes
   à ~0,2s par grille difficile). Le champ `solution_unique` vaut `1` pour
-  les 50 grilles générées. Le générateur conserve tout de même un
+  les 150 grilles générées. Le générateur conserve tout de même un
   mécanisme de secours (`solution_unique = 0`) documenté au cas où une
   taille de grille beaucoup plus grande rendrait un jour la vérification
   trop coûteuse.
 
 - **Hashi (Ponts)** : la preuve d'unicité (recherche exhaustive de toutes
   les solutions possibles) n'est tentée que pour les puzzles de 9 îles ou
-  moins, ce qui correspond en pratique aux 20 puzzles **faciles**
+  moins, ce qui correspond en pratique aux 50 puzzles **faciles**
   (6 à 8 îles) — tous confirmés uniques. Au-delà (puzzles **moyens** et
-  **difficiles**, 10 à 20 îles), la recherche exhaustive deviendrait trop
-  coûteuse en temps de calcul pour cette première version ; l'unicité
-  n'est donc **pas** garantie pour ces 30 puzzles. En revanche, **la
-  validité de la solution stockée est garantie à 100 %** pour les 50
-  puzzles : chaque solution est vérifiée règle par règle (alignement,
-  absence de croisement, 1 ou 2 ponts par arête, somme exacte par île,
-  connexité de toutes les îles) via `validate_hashi_solution()`, et cette
-  vérification est ré-exécutée dans les tests. Le champ `solution_unique`
-  en base reflète honnêtement ce qui a été vérifié (1 = unicité prouvée,
-  0 = solution valide mais unicité non prouvée).
+  **difficiles**, 10 à 20 îles, 100 puzzles), la recherche exhaustive
+  deviendrait trop coûteuse en temps de calcul pour cette première
+  version ; l'unicité n'est donc **pas** garantie pour ces 100 puzzles.
+  En revanche, **la validité de la solution stockée est garantie à 100 %**
+  pour les 150 puzzles : chaque solution est vérifiée règle par règle
+  (alignement, absence de croisement, 1 ou 2 ponts par arête, somme
+  exacte par île, connexité de toutes les îles) via
+  `validate_hashi_solution()`, et cette vérification est ré-exécutée dans
+  les tests. Le champ `solution_unique` en base reflète honnêtement ce
+  qui a été vérifié (1 = unicité prouvée, 0 = solution valide mais
+  unicité non prouvée).
 
 - **Cross Math** : contrairement au Nonogramme ou au Hashi, l'unicité est
-  ici **garantie sans exception pour les 50 niveaux** (`solution_unique`
-  vaut toujours `1`). C'est possible car le solveur ne cherche pas parmi
-  tous les chiffres possibles, mais uniquement parmi les **permutations
-  du multi-ensemble `available_numbers`** dans les cases vides (le joueur
-  place des nombres donnés, il n'en invente pas) — un espace de recherche
-  bien plus restreint qu'un solveur "chiffres libres", et donc rapide à
-  épuiser même pour les niveaux difficiles (14 cases à remplir, moins de
-  0,5s par niveau observé en pratique). La détection de doublons ne
+  ici **garantie sans exception pour les 150 niveaux** (`solution_unique`
+  vaut toujours `1`), y compris pour les 50 niveaux difficiles générés
+  avec les paramètres renforcés de la v5 (jusqu'à 14 cases à remplir sur
+  16, re-vérifiés indépendamment en ~3,4s pour l'ensemble des 50). C'est
+  possible car le solveur ne cherche pas parmi tous les chiffres
+  possibles, mais uniquement parmi les **permutations du multi-ensemble
+  `available_numbers`** dans les cases vides (le joueur place des nombres
+  donnés, il n'en invente pas) — un espace de recherche bien plus
+  restreint qu'un solveur "chiffres libres". La détection de doublons ne
   couvre explicitement que la transposition (lignes ↔ colonnes) — les
-  50 niveaux générés se sont révélés naturellement distincts sans avoir
+  150 niveaux générés se sont révélés naturellement distincts sans avoir
   eu besoin de retenter à cause de cette vérification.
 
 ## Utilisation
 
 ```bash
-# Générer la base (additif : ne touche jamais aux niveaux déjà présents)
+# Peuplement initial (additif : ne génère que si une table est vide)
 python generate_data.py
+
+# Ajouter 100 niveaux de plus par type (30 faciles / 30 moyens / 40 difficiles)
+# — script non idempotent : chaque exécution ajoute 100 niveaux supplémentaires
+python add_extra_levels.py
 
 # Vérifier que tout est valide
 python test_data.py
@@ -300,7 +353,7 @@ python query.py
 from query import get_games, get_random_game
 
 # Un jeu au hasard, tous types confondus (6 types, tirage ÉQUILIBRÉ par type
-# malgré 250 niveaux de Compte est bon contre 50 pour les autres), <= 10 min
+# malgré 350 niveaux de Compte est bon contre 150 pour les autres), <= 10 min
 get_random_game(max_duration=10)
 
 # Toutes les grilles de Sudoku moyennes
@@ -336,7 +389,7 @@ errors = validate_player_grid(
 is_correct = len(errors) == 0
 ```
 
-## Prochaines étapes (hors périmètre de cette v1/v2/v3/v4)
+## Prochaines étapes (hors périmètre de cette v1 → v5)
 
 - Interface de jeu (Sudoku, Mastermind, Nonogramme, Hashi, Compte est bon, Cross Math)
 - Suivi de la progression / scores par utilisateur

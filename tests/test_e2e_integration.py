@@ -46,7 +46,7 @@ class TestBrainTrainIntegration(unittest.TestCase):
         status, _, body = self.get("/api/games")
         self.assertEqual(status, 200)
         data = json.loads(body.decode("utf-8"))
-        self.assertEqual(data["total"], 500)
+        self.assertEqual(data["total"], 1100)
 
     def test_cross_math_gameplay_flow(self):
         status, _, body = self.get("/api/games/random?type=cross_math&difficulty=facile")

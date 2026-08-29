@@ -10,6 +10,7 @@ Le code secret est une suite de `num_positions` chiffres,
 chacun entre 1 et `num_colors` (les couleurs peuvent se répéter,
 comme dans le vrai jeu).
 """
+
 from __future__ import annotations
 
 import random

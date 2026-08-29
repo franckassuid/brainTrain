@@ -19,6 +19,8 @@ Usage :
     python generate_data.py
 """
 
+from __future__ import annotations
+
 import sys
 import time
 
@@ -42,12 +44,15 @@ DISTRIBUTION = {"facile": 20, "moyen": 20, "difficile": 10}  # 50 au total
 COMPTE_EST_BON_DISTRIBUTION = {"facile": 100, "moyen": 100, "difficile": 50}  # 250 au total
 
 
-def generate_sudoku_batch(conn) -> None:
-    print("Génération des grilles de Sudoku...")
-    seen_grids = set()
+def generate_sudoku_batch(conn, distribution: dict[str, int] | None = None) -> None:
+    distribution = distribution or DISTRIBUTION
+    target_total = sum(distribution.values())
+    print(f"Génération de {target_total} grilles de Sudoku...")
+
+    seen_grids = {r[0] for r in conn.execute("SELECT starting_grid FROM sudoku_puzzles").fetchall()}
     total = 0
 
-    for difficulty, count in DISTRIBUTION.items():
+    for difficulty, count in distribution.items():
         for i in range(count):
             t0 = time.time()
             while True:
@@ -74,18 +79,23 @@ def generate_sudoku_batch(conn) -> None:
             )
             total += 1
             print(
-                f"  [{total}/50] {difficulty:<10} "
+                f"  [{total}/{target_total}] {difficulty:<10} "
                 f"{puzzle['clue_count']} indices  ({elapsed:.2f}s)"
             )
     conn.commit()
 
 
-def generate_mastermind_batch(conn) -> None:
-    print("\nGénération des parties de Mastermind...")
+def generate_mastermind_batch(conn, distribution: dict[str, int] | None = None) -> None:
+    distribution = distribution or DISTRIBUTION
+    target_total = sum(distribution.values())
+    print(f"\nGénération de {target_total} parties de Mastermind...")
+
     codes_by_difficulty: dict[str, set] = {"facile": set(), "moyen": set(), "difficile": set()}
+    for r in conn.execute("SELECT difficulty, secret_code FROM mastermind_games").fetchall():
+        codes_by_difficulty.setdefault(r[0], set()).add(r[1])
     total = 0
 
-    for difficulty, count in DISTRIBUTION.items():
+    for difficulty, count in distribution.items():
         for i in range(count):
             game = generate_mastermind_game(difficulty, codes_by_difficulty[difficulty])
             conn.execute(
@@ -105,17 +115,20 @@ def generate_mastermind_batch(conn) -> None:
                 ),
             )
             total += 1
-            print(f"  [{total}/50] {difficulty:<10} code={game['secret_code']}")
+            print(f"  [{total}/{target_total}] {difficulty:<10} code={game['secret_code']}")
     conn.commit()
 
 
-def generate_nonogram_batch(conn) -> None:
-    print("\nGénération des Nonogrammes...")
-    seen_grids = set()
+def generate_nonogram_batch(conn, distribution: dict[str, int] | None = None) -> None:
+    distribution = distribution or DISTRIBUTION
+    target_total = sum(distribution.values())
+    print(f"\nGénération de {target_total} Nonogrammes...")
+
+    seen_grids = {r[0] for r in conn.execute("SELECT solution_grid FROM nonogram_puzzles").fetchall()}
     total = 0
     unverified = 0
 
-    for difficulty, count in DISTRIBUTION.items():
+    for difficulty, count in distribution.items():
         for i in range(count):
             t0 = time.time()
             while True:
@@ -148,7 +161,7 @@ def generate_nonogram_batch(conn) -> None:
             )
             total += 1
             print(
-                f"  [{total}/50] {difficulty:<10} "
+                f"  [{total}/{target_total}] {difficulty:<10} "
                 f"{puzzle['num_rows']}x{puzzle['num_cols']}  "
                 f"unique={puzzle['solution_unique']}  ({elapsed:.3f}s)"
             )
@@ -157,13 +170,16 @@ def generate_nonogram_batch(conn) -> None:
         print(f"  ATTENTION : {unverified} grille(s) acceptée(s) sans unicité confirmée (cf. README.md).")
 
 
-def generate_hashi_batch(conn) -> None:
-    print("\nGénération des puzzles Hashi (Ponts)...")
+def generate_hashi_batch(conn, distribution: dict[str, int] | None = None) -> None:
+    distribution = distribution or DISTRIBUTION
+    target_total = sum(distribution.values())
+    print(f"\nGénération de {target_total} puzzles Hashi (Ponts)...")
+
     total = 0
     checked = 0
     unique = 0
 
-    for difficulty, count in DISTRIBUTION.items():
+    for difficulty, count in distribution.items():
         for i in range(count):
             t0 = time.time()
             puzzle = generate_hashi_puzzle(difficulty)
@@ -197,7 +213,7 @@ def generate_hashi_batch(conn) -> None:
                 ("non vérifiée" if not puzzle["uniqueness_checked"] else "NON unique (!)")
             )
             print(
-                f"  [{total}/50] {difficulty:<10} "
+                f"  [{total}/{target_total}] {difficulty:<10} "
                 f"{len(puzzle['islands'])} îles  unicité={unique_str}  ({elapsed:.3f}s)"
             )
     conn.commit()
@@ -207,13 +223,17 @@ def generate_hashi_batch(conn) -> None:
     )
 
 
-def generate_compte_est_bon_batch(conn) -> None:
-    print("\nGénération des niveaux du Compte est bon...")
-    seen_combinations = set()
-    total = 0
-    target_total = sum(COMPTE_EST_BON_DISTRIBUTION.values())
+def generate_compte_est_bon_batch(conn, distribution: dict[str, int] | None = None) -> None:
+    distribution = distribution or COMPTE_EST_BON_DISTRIBUTION
+    target_total = sum(distribution.values())
+    print(f"\nGénération de {target_total} niveaux du Compte est bon...")
 
-    for difficulty, count in COMPTE_EST_BON_DISTRIBUTION.items():
+    seen_combinations = set()
+    for r in conn.execute("SELECT available_numbers, target FROM compte_est_bon_puzzles").fetchall():
+        seen_combinations.add((tuple(sorted(json.loads(r[0]))), r[1]))
+    total = 0
+
+    for difficulty, count in distribution.items():
         for i in range(count):
             t0 = time.time()
             while True:
@@ -251,13 +271,30 @@ def generate_compte_est_bon_batch(conn) -> None:
     conn.commit()
 
 
-def generate_cross_math_batch(conn) -> None:
-    print("\nGénération des niveaux Cross Math...")
-    seen_signatures = set()
-    total = 0
-    target_total = sum(DISTRIBUTION.values())
+def generate_cross_math_batch(conn, distribution: dict[str, int] | None = None) -> None:
+    from cross_math_generator import canonical_signature
 
-    for difficulty, count in DISTRIBUTION.items():
+    distribution = distribution or DISTRIBUTION
+    target_total = sum(distribution.values())
+    print(f"\nGénération de {target_total} niveaux Cross Math...")
+
+    seen_signatures = set()
+    for r in conn.execute(
+        "SELECT grid_size, solution_grid, row_operators, col_operators, row_results, col_results "
+        "FROM cross_math_puzzles"
+    ).fetchall():
+        existing_puzzle = {
+            "grid_size": r[0],
+            "numbers_grid": json.loads(r[1]),
+            "row_operators": json.loads(r[2]),
+            "col_operators": json.loads(r[3]),
+            "row_results": json.loads(r[4]),
+            "col_results": json.loads(r[5]),
+        }
+        seen_signatures.add(canonical_signature(existing_puzzle))
+    total = 0
+
+    for difficulty, count in distribution.items():
         for i in range(count):
             t0 = time.time()
             while True:
